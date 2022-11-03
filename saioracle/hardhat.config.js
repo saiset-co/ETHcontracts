@@ -42,7 +42,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 
 
-const {PivateKeyArr} = require("../../keys/test1.js");
+const {PivateKeyArr} = require("../../../keys/test1.js");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
