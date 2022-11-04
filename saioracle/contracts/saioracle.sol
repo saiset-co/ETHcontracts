@@ -35,6 +35,7 @@ contract SaiOracle is Ownable {
         require(key < PREFIX_KEY, "setKeyValue::key is larger than the MaxKey");
         mapValue[key] = value;
 
+
         uint256 _Degree = Degree;
 
         key |= PREFIX_KEY;
