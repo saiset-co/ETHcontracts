@@ -4,17 +4,18 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract SaiOracle is Ownable {
     mapping(uint256 => string) private mapValue;
     mapping(uint256 => uint256) private mapIndex;
 
     uint256 public Degree;
-    uint256 public MinKey;
-    uint256 public MaxKey;
 
-    uint256 constant MAX_KEY=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint256 constant MAX_KEY =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint256 constant PREFIX_KEY =
+        0xFF00000000000000000000000000000000000000000000000000000000000000;
 
     constructor() {
         setIntervalDegree(32);
@@ -22,24 +23,21 @@ contract SaiOracle is Ownable {
 
     function setIntervalDegree(uint256 _Degree) public onlyOwner {
         require(_Degree > 0, "setInterval::Degree is zero");
-        //require(_Degree <=32, "setInterval::Max Degree = 32");
         require(
             _Degree % 8 == 0,
             "setInterval::Degree of the interval must be a multiple of 8"
         );
 
         Degree = _Degree;
-        MinKey = 1 << (Degree - 8);
-        MaxKey = 1 << Degree;
     }
 
     function _setKeyValue(uint256 key, string memory value) internal {
-        require(key >= MinKey, "setKeyValue::key is smaller than the MinKey");
-        require(key < MaxKey, "setKeyValue::key is larger than the MaxKey");
+        require(key < PREFIX_KEY, "setKeyValue::key is larger than the MaxKey");
         mapValue[key] = value;
 
         uint256 _Degree = Degree;
 
+        key |= PREFIX_KEY;
         while (_Degree > 0) {
             _Degree -= 8;
 
@@ -49,12 +47,14 @@ contract SaiOracle is Ownable {
             uint256 key0 = mapIndex[key];
             mapIndex[key] = key0 | (1 << bit);
 
-            //console.log("setValue %s  key=%s _Degree=%s", value, key,_Degree);
-            //console.logBytes32(bytes32(mapIndex[key]));
+            console.log("setValue %s  _Degree=%s", value, _Degree);
+            console.logBytes32(bytes32(key));
+            console.logBytes32(bytes32(mapIndex[key]));
         }
     }
+
     function setKeyValue(uint256 key, string memory value) external onlyOwner {
-        _setKeyValue(key,value);
+        _setKeyValue(key, value);
     }
 
     function setValue(string memory value) public onlyOwner {
@@ -70,8 +70,9 @@ contract SaiOracle is Ownable {
     }
 
     function findKeyLeft(uint256 key) public view returns (uint256) {
+        key = PREFIX_KEY | key;
         (, uint256 nKey) = findKeyLeftIter(key, key >> Degree, Degree);
-        return nKey;
+        return (nKey << 8) >> 8;
     }
 
     function findKeyLeftIter(
@@ -95,8 +96,7 @@ contract SaiOracle is Ownable {
         uint256 keyIndex2 = (keyIndex << 8) | nKey;
 
         if (Degree2 > 0) {
-            if (nKey < nStart)
-                key = MAX_KEY;
+            if (nKey < nStart) key = MAX_KEY;
 
             (bool bFind, uint256 nKey2) = findKeyLeftIter(
                 key,
@@ -115,10 +115,13 @@ contract SaiOracle is Ownable {
                     if (bits == 0) return (false, 0);
                     nKey = LeftBitToKey(bits);
                     keyIndex2 = (keyIndex << 8) | nKey;
-                    (bFind, nKey2) = findKeyLeftIter(MAX_KEY, keyIndex2, Degree2);
+                    (bFind, nKey2) = findKeyLeftIter(
+                        MAX_KEY,
+                        keyIndex2,
+                        Degree2
+                    );
 
                     if (!bFind) return (false, 0);
-                    
                 } else {
                     return (false, 0);
                 }
@@ -129,8 +132,6 @@ contract SaiOracle is Ownable {
         }
         return (true, keyIndex2);
     }
-
-
 
     function LeftBitToKey(uint256 bits) internal pure returns (uint256) {
         uint256 nKey = 0;
@@ -170,12 +171,11 @@ contract SaiOracle is Ownable {
     }
 
     function doFindValue(uint256 key) external onlyOwner {
-        //string memory Str = 
+        //string memory Str =
         findValue(key);
         findValue(key);
         //console.log("Find : %s",Str);
         //uint256 bits=0x0100000000000000000000000000000010000000000000000000000001000000;
         //console.log("FindL: %s",LeftBitToKey(bits));
     }
-
 }

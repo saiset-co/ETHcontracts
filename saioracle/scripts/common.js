@@ -61,19 +61,19 @@ async function deploySmartsTest() {
   
   console.log("----------test--------------");
   //await Contract.setKeyValue(0x0100,"{Test1}");
-  await Contract.setKeyValue(0x01000105,"{Test1}");
-  await Contract.setKeyValue(0x01010307,"{Test2}");
-  await Contract.setKeyValue(0x01010608,"{Test3}");
+  await Contract.setKeyValue(0x00010000,"{Test1}");
+  await Contract.setKeyValue(0x00020002,"{Test2}");
+  await Contract.setKeyValue(0x00030004,"{Test3}");
   
   //await Contract.setKeyValue(0x0020000000,"{0x0020000000}");
   //await Contract.setKeyValue(0x0200000002,"{Test5}");
   //await Contract.setKeyValue(0x0200000004,"{Test6}");
   
-  var Key=0x01010607;
+  var Key=0x00030001;
   console.log("Get :",ToString(await Contract.getValue(Key)));
   console.log("Find :",ToString(await Contract.findValue(Key)));
   
-  //await Contract.doFindValue(Key);
+  await Contract.doFindValue(Key);
   //await Contract.doFindValue(Key+1);
   //await Contract.doFindValue(Key+7);
   
