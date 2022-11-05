@@ -38,7 +38,7 @@ async function deploySmartsTest() {
 
   
   
-  //await Contract.setIntervalDegree(32);
+  await Contract.setIntervalDegree(32);
   
   /*
   var Key=await Contract.getTimeStamp();
@@ -61,17 +61,25 @@ async function deploySmartsTest() {
   
   console.log("----------test--------------");
   //await Contract.setKeyValue(0x0100,"{Test1}");
-  await Contract.setKeyValue(0x00010000,"{Test1}");
-  await Contract.setKeyValue(0x00020002,"{Test2}");
-  await Contract.setKeyValue(0x00030004,"{Test3}");
+  //await Contract.setKeyValue(0x0001,"{Test00}");
+  //await Contract.setKeyValue(0x000100,"{Test0}");
+  await Contract.setKeyValue(0x00010100,"{Test1}");
+  await Contract.setKeyValue(0x01010102,"{Test2}");
+
+  await Contract.setKeyValue(0x01010104,"{Test3}");
+  await Contract.setKeyValue(0x01010108,"{Test4}");
   
-  //await Contract.setKeyValue(0x0020000000,"{0x0020000000}");
-  //await Contract.setKeyValue(0x0200000002,"{Test5}");
-  //await Contract.setKeyValue(0x0200000004,"{Test6}");
   
-  var Key=0x00030001;
+  var Key=0x01010107;
   console.log("Get :",ToString(await Contract.getValue(Key)));
-  console.log("Find :",ToString(await Contract.findValue(Key)));
+  console.log("Min :",ToString(await Contract.findValueMin(Key)));
+  console.log("Max :",ToString(await Contract.findValueMax(Key)));
+  console.log("Find:",ToString(await Contract.findValue(Key)));
+
+  var Key1=0x01010101;
+  var Key2=0x11010109;
+  console.log("Value:",ToString(await Contract.findValueRange(Key1,Key2,100)));
+  
   
   await Contract.doFindValue(Key);
   //await Contract.doFindValue(Key+1);
