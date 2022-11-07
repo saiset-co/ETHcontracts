@@ -23,26 +23,42 @@ async function deploySmarts() {
   console.log("Account befor balance:", (await owner.getBalance()).toString());
 
   const Contract = await StartDeploy("SaiSaleVesting");
+  const TokenUSD = await StartDeploy("USDTest");
+  const TokenSale = await StartDeploy("USDTest");
 
   console.log("Owner:", (await Contract.owner()).toString());
 
   console.log("Account after balance:", (await owner.getBalance()).toString());
-  return { owner, otherAccount, Contract};
+  return { owner, otherAccount, Contract, TokenUSD, TokenSale};
 }
 
 async function deploySmartsTest() {
 
-  const { owner, otherAccount, Contract} = await deploySmarts();
-  //await Contract.doFindValue(1);
-  //return { owner, otherAccount, Contract};
+  const { owner, otherAccount, Contract, TokenUSD, TokenSale} = await deploySmarts();
+  await TokenUSD.Mint("1000000000000000000000");//1000
+  await TokenSale.Mint("10000000000000000000000");//10000
+  await TokenSale.transfer(Contract.address,"10000000000000000000000");//1000
+  
+  console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+  console.log("Sale: ",ToFloat(await TokenSale.balanceOf(Contract.address)));
+  
+  await Contract.setCoin(TokenUSD.address,"1000000000000000000");
 
-  
-  
+  var SaleStart="2000000000";
+  await Contract.setSale(TokenSale.address,SaleStart,"10000000000","10000000000000000000000","1000000000000000000");
+
+  console.log("----------buy----------------");
+  console.log("1 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+  await TokenUSD.approve(Contract.address,"1000000000000000000000");
+  await Contract.buyToken(TokenSale.address,SaleStart,TokenUSD.address,"200000000000000000000");//200
+  console.log("Buy  : ",ToFloat(await TokenSale.balanceOf(owner.address)));
+  console.log("2 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+
   //await Contract.setValue(");
   //console.log("Get :",ToString(await Contract.getValue()));
 
 
-  return { owner, otherAccount, Contract};
+  return { owner, otherAccount, Contract, TokenUSD, TokenSale};
 }
 
 
