@@ -91,10 +91,10 @@ contract SaiSaleVesting is Ownable {
             1e18;
         require(
             smartCoin.transferFrom(msg.sender, address(this), CoinAmount),
-            "Error transfer clients coins"
+            "Error transfer client coins"
         );
 
-        //add clients balance tokens
+        //add client balance tokens
         bytes32 keyBalance = _getKeyBalance(
             msg.sender,
             addressTokenSale,
