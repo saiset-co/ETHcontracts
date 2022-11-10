@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol";
+
 
 
 //import "hardhat/console.sol";
@@ -52,7 +54,7 @@ contract InvestGame is Ownable {
     function requestTradeToken(address addrToken) external {
         require(Price > 0, "Error, listing Price is zero");
         require(addrToken != address(0), "Error token smart address");
-        //todo - check UniSwap
+       
 
         //todo - get fee from client ?? Eth or ERC20
 
@@ -169,4 +171,15 @@ contract InvestGame is Ownable {
             }
         }
     }
+
+    //Returns the pool for the given token pair and fee. The pool contract may or may not exist
+    function getPool(
+        address factory,
+        address tokenA,
+        address tokenB
+    ) private view returns (address) {
+        return PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, poolFee));
+    }
+
+
 }
