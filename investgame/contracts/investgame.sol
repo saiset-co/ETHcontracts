@@ -5,7 +5,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+
 import "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 
 
@@ -172,6 +175,7 @@ contract InvestGame is Ownable {
         }
     }
 
+    //TODO
     //Returns the pool for the given token pair and fee. The pool contract may or may not exist
     function getPool(
         address factory,
@@ -181,5 +185,24 @@ contract InvestGame is Ownable {
         return PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, poolFee));
     }
 
+    function getPool(
+        IUniswapV3Factory factory,
+        address tokenA,
+        address tokenB
+    ) private view returns (address) {
+        return factory.getPool(tokenA, tokenB, poolFee);
+    }
+
+   function getPrice(IUniswapV3Factory factory, address tokenIn, address tokenOut)
+        external
+        view
+        returns (uint256 price)
+    {
+        IUniswapV3Pool pool = IUniswapV3Pool(factory.getPool(tokenIn, tokenOut, poolFee));
+        (uint160 sqrtPriceX96,,,,,,) =  pool.slot0();
+        //return sqrtPriceX96;
+        //return uint(sqrtPriceX96).mul(uint(sqrtPriceX96)).mul(1e18) >> (96 * 2);
+        return (uint(sqrtPriceX96)*uint(sqrtPriceX96)*1e18) >> (96 * 2);
+    }
 
 }
