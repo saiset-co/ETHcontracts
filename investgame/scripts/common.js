@@ -54,9 +54,10 @@ async function deploySmartsTest() {
   
   console.log("----------Listing-------------");
   await Contract.requestTradeToken(TokenFTX.address,TokenUSD.address);
-  console.log("Request:",await Contract.listTradeRequest(0,10));
+  //await Contract.requestTradeToken(TokenUSD.address,TokenUSD.address);
+  console.log("Request:",ToString(await Contract.listTradeRequest(0,10)));
   await Contract.approveTradeToken(TokenFTX.address,100);
-  console.log("Request:",await Contract.listTradeRequest(0,10));
+  console.log("Request:",ToString(await Contract.listTradeRequest(0,10)));
   //console.log("getPool:",await Contract.getPool(TokenFTX.address,TokenUSD.address));
   console.log("Rank:",ToString(await Contract.rankTradeToken(TokenFTX.address)));
   
@@ -77,7 +78,9 @@ async function deploySmartsTest() {
   console.log("Balance FTX:",ToFloat(await Contract.balanceOf(owner.address,TokenFTX.address)));
 
   console.log("----------Withdraw Owner-------------");
-  await Contract.withdrawCoins(TokenFTX.address,FromSum18(100));
+  console.log("1 Smart FTX:",ToFloat(await TokenFTX.balanceOf(Contract.address)));
+  await (await Contract.withdrawCoins(TokenFTX.address,FromSum18(100))).wait();
+  console.log("2 Smart FTX:",ToFloat(await TokenFTX.balanceOf(Contract.address)));
   
   console.log("------------------------------------------");
   console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
