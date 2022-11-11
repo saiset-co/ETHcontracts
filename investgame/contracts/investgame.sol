@@ -38,12 +38,18 @@ contract InvestGame is Admin, Ownable {
 */
 
     //see addr from https://docs.uniswap.org/protocol/reference/deployments
+    //Polygon:
+    //0x1F98431c8aD98523631AE4a59f267346ea31F984
+    //0xE592427A0AEce92De3Edee1F18E0157C05861564
+    //0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
+    //0xc2132d05d31c914a87c6611c10748aeb04b58e8f //mainnet
+
     function setUniswap(
         address _factory,
         address _swapRouter,
         address _addrETH,
         address _addrUSDT
-    ) public onlyAdmin {
+    ) public onlyOwner {
         swapFactory = IUniswapV3Factory(_factory);
         swapRouter = ISwapRouter(_swapRouter);
         addrETH = _addrETH;
@@ -232,16 +238,20 @@ contract InvestGame is Admin, Ownable {
         return swapFactory.getPool(tokenA, tokenB, poolFee);
     }
 
+ 
     function hasPool(address tokenA, address tokenB)
         public
         view
         returns (bool)
     {
-        IUniswapV3Pool pool = IUniswapV3Pool(getPool(tokenA, tokenB));
+        return getPool(tokenA, tokenB)!=address(0);
+/*        IUniswapV3Pool pool = IUniswapV3Pool(getPool(tokenA, tokenB));
         (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         return sqrtPriceX96 != 0;
+*/        
     }
+    
 
     function poolPrice(address tokenIn, address tokenOut)
         external

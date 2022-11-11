@@ -45,12 +45,15 @@ async function deploySmartsTest() {
   await TokenFTX.approve(Contract.address,FromSum18(1000));
   
 
+
   await (await Contract.setUniswap(UniSwap.address,UniSwap.address,TokenUSD.address,TokenUSD.address)).wait();
   console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
   console.log("FTX: ",ToFloat(await TokenFTX.balanceOf(owner.address)));
 
   await Contract.setTradeToken(TokenUSD.address,1);
   await Contract.setListingPrice(TokenUSD.address,FromSum18(30));
+
+  //console.log("getPool:",await Contract.getPool(TokenFTX.address,"0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"));//WMATIC
   
   console.log("----------Listing-------------");
   await Contract.requestTradeToken(TokenFTX.address,TokenUSD.address);
@@ -58,7 +61,6 @@ async function deploySmartsTest() {
   console.log("Request:",ToString(await Contract.listTradeRequest(0,10)));
   await Contract.approveTradeToken(TokenFTX.address,100);
   console.log("Request:",ToString(await Contract.listTradeRequest(0,10)));
-  //console.log("getPool:",await Contract.getPool(TokenFTX.address,TokenUSD.address));
   console.log("Rank:",ToString(await Contract.rankTradeToken(TokenFTX.address)));
   
   console.log("----------Deposit-------------");
