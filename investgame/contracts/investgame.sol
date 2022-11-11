@@ -30,8 +30,7 @@ contract InvestGame is Admin, Ownable {
     address addrETH;
     address addrUSDT;
 
-
-/*
+    /*
     constructor(IUniswapV3Factory _factory, ISwapRouter _swapRouter) {
         swapFactory=_factory;
         swapRouter = _swapRouter;
@@ -39,14 +38,17 @@ contract InvestGame is Admin, Ownable {
 */
 
     //see addr from https://docs.uniswap.org/protocol/reference/deployments
-    function setUniswap(address _factory,address _swapRouter,address _addrETH,address _addrUSDT) public onlyAdmin {
-        swapFactory=IUniswapV3Factory(_factory);
+    function setUniswap(
+        address _factory,
+        address _swapRouter,
+        address _addrETH,
+        address _addrUSDT
+    ) public onlyAdmin {
+        swapFactory = IUniswapV3Factory(_factory);
         swapRouter = ISwapRouter(_swapRouter);
-        addrETH=_addrETH;
-        addrUSDT=_addrUSDT;
+        addrETH = _addrETH;
+        addrUSDT = _addrUSDT;
     }
-
-
 
     function setListingPrice(address addrCoin, uint256 price) public onlyAdmin {
         MapPrice[addrCoin] = price;
@@ -66,32 +68,30 @@ contract InvestGame is Admin, Ownable {
         delete MapTradeCoin[addrToken];
     }
 
-    function requestTradeToken(address addrToken,address addrCoin) payable external {
+    function requestTradeToken(address addrToken, address addrCoin)
+        external
+        payable
+    {
         uint256 Price = MapPrice[addrCoin];
         require(Price > 0, "Error, listing Price is zero");
         require(addrToken != address(0), "Error token smart address");
 
-        require(hasPool(addrToken,addrETH) || hasPool(addrToken,addrUSDT),"Need pool ETH or USDT");
-
-       
+        require(
+            hasPool(addrToken, addrETH) || hasPool(addrToken, addrUSDT),
+            "Need pool ETH or USDT"
+        );
 
         //get fee from client
 
-        if(addrCoin==address(0))
-        {
+        if (addrCoin == address(0)) {
             require(Price == msg.value, "Error of the received ETH amount");
-        }
-        else
-        {
+        } else {
             //transfer coins from client
             require(
                 IERC20(addrCoin).transferFrom(msg.sender, address(this), Price),
                 "Error transfer client coins"
             );
         }
-
-
-
 
         EnumTradeRequest.set(addrToken, 1);
     }
@@ -109,13 +109,14 @@ contract InvestGame is Admin, Ownable {
         address addrTokenTo,
         uint256 amount
     ) external {
-        require(MapTradeCoin[addrTokenFrom] != 0, "Error tokenFrom smart address");
+        require(
+            MapTradeCoin[addrTokenFrom] != 0,
+            "Error tokenFrom smart address"
+        );
         require(MapTradeCoin[addrTokenTo] != 0, "Error tokenTo smart address");
 
         uint256 amountRest = MapWallet[msg.sender][addrTokenFrom];
         require(amountRest >= amount, "Insufficient funds");
-
-        //--------------------------todo test UniSwap
 
         // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
         // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
@@ -127,7 +128,7 @@ contract InvestGame is Admin, Ownable {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amount,
-                amountOutMinimum: 0, //!! - устанавливаем на ноль,но в продакшене это дает определенный риск. Для реального проекта, это значение должно быть рассчитано с использованием нашего SDK или оракула цен в сети — это помогает защититься от получения нехарактерно плохих цен для сделки ,которые могут являться следствием работы фронта или любого другого типа манипулирования ценой. 
+                amountOutMinimum: 0, //!! - устанавливаем на ноль,но в продакшене это дает определенный риск. Для реального проекта, это значение должно быть рассчитано с использованием нашего SDK или оракула цен в сети — это помогает защититься от получения нехарактерно плохих цен для сделки ,которые могут являться следствием работы фронта или любого другого типа манипулирования ценой.
                 sqrtPriceLimitX96: 0 //!! - устанавливаем в 0 — это делает этот парамент неактивным.В продакшене, это значение можно использовать для установки предела цены, по которой своп будет проходить в пуле.
             });
 
@@ -171,22 +172,20 @@ contract InvestGame is Admin, Ownable {
         MapWallet[msg.sender][addrToken] = amountRest - amount;
     }
 
-
     //withdraw by owner
-    function withdrawCoins(address addrCoin, uint256 amount) external onlyOwner {
-        if(addrCoin==address(0))
-        {
+    function withdrawCoins(address addrCoin, uint256 amount)
+        external
+        onlyOwner
+    {
+        if (addrCoin == address(0)) {
             payable(msg.sender).transfer(amount);
-        }
-        else {
+        } else {
             IERC20(addrCoin).transfer(msg.sender, amount);
         }
     }
 
-
-
     //view
-    function getListingPrice(address addrCoin) view public returns(uint256) {
+    function getListingPrice(address addrCoin) public view returns (uint256) {
         return MapPrice[addrCoin];
     }
 
@@ -225,33 +224,34 @@ contract InvestGame is Admin, Ownable {
         }
     }
 
-
-    function getPool(
-        address tokenA,
-        address tokenB
-    ) public view returns (address) {
+    function getPool(address tokenA, address tokenB)
+        public
+        view
+        returns (address)
+    {
         return swapFactory.getPool(tokenA, tokenB, poolFee);
     }
 
-    function hasPool(
-        address tokenA,
-        address tokenB
-    ) public view returns (bool) {
-
+    function hasPool(address tokenA, address tokenB)
+        public
+        view
+        returns (bool)
+    {
         IUniswapV3Pool pool = IUniswapV3Pool(getPool(tokenA, tokenB));
-        (uint160 sqrtPriceX96,,,,,,) =  pool.slot0();
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
 
         return sqrtPriceX96 != 0;
     }
 
-
-   function poolPrice(address tokenIn, address tokenOut)
+    function poolPrice(address tokenIn, address tokenOut)
         external
         view
         returns (uint256 price)
     {
-        IUniswapV3Pool pool = IUniswapV3Pool(swapFactory.getPool(tokenIn, tokenOut, poolFee));
-        (uint160 sqrtPriceX96,,,,,,) =  pool.slot0();
-        return (uint(sqrtPriceX96)*uint(sqrtPriceX96)*1e18) >> (96 * 2);
+        IUniswapV3Pool pool = IUniswapV3Pool(
+            swapFactory.getPool(tokenIn, tokenOut, poolFee)
+        );
+        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
+        return (uint(sqrtPriceX96) * uint(sqrtPriceX96) * 1e18) >> (96 * 2);
     }
 }
