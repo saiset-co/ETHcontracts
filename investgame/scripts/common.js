@@ -20,72 +20,71 @@ async function StartDeploy(Name, Param1) {
 async function deploySmarts() {
   const [owner, otherAccount] = await hre.ethers.getSigners();
   console.log("Deploying contracts with the account:", owner.address);
-  console.log("Account befor balance:", (await owner.getBalance()).toString());
+  console.log("Account befor balance:", ToFloat(await owner.getBalance()).toString());
 
-  const Contract = await StartDeploy("SaiSaleVesting");
+  const Contract = await StartDeploy("InvestGame");
+  const UniSwap = await StartDeploy("UniSwap");
   const TokenUSD = await StartDeploy("USDTest");
-  const TokenSale = await StartDeploy("USDTest");
+  const TokenFTX = await StartDeploy("USDTest");
 
   console.log("Owner:", (await Contract.owner()).toString());
 
-  console.log("Account after balance:", (await owner.getBalance()).toString());
-  return { owner, otherAccount, Contract, TokenUSD, TokenSale};
+  console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
+  return { owner, otherAccount, Contract, UniSwap, TokenUSD, TokenFTX};
 }
 
 async function deploySmartsTest() {
 
-  const { owner, otherAccount, Contract, TokenUSD, TokenSale} = await deploySmarts();
-  //console.log("FromSum18(1)=",FromSum18(1));
+  const { owner, otherAccount, Contract, UniSwap, TokenUSD, TokenFTX} = await deploySmarts();
+  
+  await TokenUSD.MintTo(Contract.address,FromSum18(10000));
   await TokenUSD.Mint(FromSum18(1000));
-  await TokenSale.Mint(FromSum18(5000));
-  await TokenSale.transfer(Contract.address,FromSum18(5000));
+  await TokenFTX.Mint(FromSum18(2000));
   
-  console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
-  console.log("Sale: ",ToFloat(await TokenSale.balanceOf(Contract.address)));
-  
-  var Rate =FromSum18(1);
-  var Price=Rate;
-  await Contract.setCoin(TokenUSD.address,Rate);
-
-
-  var SaleStart=(await Contract.currentBlock())>>>0;
-  var Vesting = SaleStart + 2;
-  console.log("SaleStart:",SaleStart);
-  await Contract.setSale(TokenSale.address, FromSum18(5000), Price, SaleStart,SaleStart+10,Vesting);
-  console.log("Sale info:",ToString(await Contract.getSale(TokenSale.address,SaleStart)));
-  
-  console.log("Block:",ToString(await Contract.currentBlock()));
-
-  console.log("----------buy----------------");
-  console.log("1 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
   await TokenUSD.approve(Contract.address,FromSum18(1000));
+  await TokenFTX.approve(Contract.address,FromSum18(1000));
   
-  //SaleStart="1000000001";
-  await Contract.buyToken(TokenSale.address,SaleStart,TokenUSD.address,FromSum18(200));
-  console.log("2 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
-  console.log("Balance",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
-  console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
-/*
-  console.log("----------pause----------------");
-  await TokenUSD.Mint(0);
-  console.log("Block:",ToString(await Contract.currentBlock()));
-  await sleep(1000);
-  await TokenUSD.Mint(0);
-  console.log("Block:",ToString(await Contract.currentBlock()));
-*/
-  console.log("----------withdraw client----------------");
-  await Contract.withdraw(TokenSale.address,SaleStart);
-  //return { owner, otherAccount, Contract, TokenUSD, TokenSale};
 
-  console.log("Balance",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
-  console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
+  await (await Contract.setUniswap(UniSwap.address,UniSwap.address,TokenUSD.address,TokenUSD.address)).wait();
+  console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+  console.log("FTX: ",ToFloat(await TokenFTX.balanceOf(owner.address)));
 
+  await Contract.setTradeToken(TokenUSD.address,1);
+  await Contract.setListingPrice(TokenUSD.address,FromSum18(30));
   
-  console.log("----------withdraw----------------");
-  await Contract.withdrawCoins(TokenUSD.address);
-  console.log("USD:   ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+  console.log("----------Listing-------------");
+  await Contract.requestTradeToken(TokenFTX.address,TokenUSD.address);
+  console.log("Request:",await Contract.listTradeRequest(0,10));
+  await Contract.approveTradeToken(TokenFTX.address,100);
+  console.log("Request:",await Contract.listTradeRequest(0,10));
+  //console.log("getPool:",await Contract.getPool(TokenFTX.address,TokenUSD.address));
+  console.log("Rank:",ToString(await Contract.rankTradeToken(TokenFTX.address)));
+  
+  console.log("----------Deposit-------------");
+  await Contract.deposit(TokenFTX.address,FromSum18(500));
+  console.log("Balance USD:",ToFloat(await Contract.balanceOf(owner.address,TokenUSD.address)));
+  console.log("Balance FTX:",ToFloat(await Contract.balanceOf(owner.address,TokenFTX.address)));
 
-  return { owner, otherAccount, Contract, TokenUSD, TokenSale};
+  console.log("----------Trade-------------");
+  await Contract.trade(TokenFTX.address,TokenUSD.address,FromSum18(100));
+  console.log("Balance USD:",ToFloat(await Contract.balanceOf(owner.address,TokenUSD.address)));
+  console.log("Balance FTX:",ToFloat(await Contract.balanceOf(owner.address,TokenFTX.address)));
+
+  console.log("----------Withdraw-------------");
+  await Contract.withdraw(TokenFTX.address,FromSum18(400));
+  await Contract.withdraw(TokenUSD.address,FromSum18(100));
+  console.log("Balance USD:",ToFloat(await Contract.balanceOf(owner.address,TokenUSD.address)));
+  console.log("Balance FTX:",ToFloat(await Contract.balanceOf(owner.address,TokenFTX.address)));
+
+  console.log("----------Withdraw Owner-------------");
+  await Contract.withdrawCoins(TokenFTX.address,FromSum18(100));
+  
+  console.log("------------------------------------------");
+  console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
+  console.log("FTX: ",ToFloat(await TokenFTX.balanceOf(owner.address)));
+
+
+  return { owner, otherAccount, Contract, UniSwap, TokenUSD, TokenFTX};
 }
 
 

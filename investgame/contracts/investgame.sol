@@ -6,16 +6,15 @@ import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
-import "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
-
+import "./Admin.sol";
 
 //import "hardhat/console.sol";
 
-contract InvestGame is Ownable {
-    uint256 public Price;
+contract InvestGame is Admin, Ownable {
+    mapping(address => uint256) private MapPrice;
     mapping(address => uint256) private MapTradeCoin;
 
     //       client             token      amount
@@ -24,23 +23,36 @@ contract InvestGame is Ownable {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
     EnumerableMap.AddressToUintMap private EnumTradeRequest;
 
-    ISwapRouter public immutable swapRouter;
-    //ISwapRouter public swapRouter; //immutable
     uint24 public constant poolFee = 3000; //set the pool fee to 0.3%.
+    //ISwapRouter public immutable swapRouter;
+    ISwapRouter public swapRouter;
+    IUniswapV3Factory swapFactory;
+    address addrETH;
+    address addrUSDT;
 
-    constructor(ISwapRouter _swapRouter) {
+
+/*
+    constructor(IUniswapV3Factory _factory, ISwapRouter _swapRouter) {
+        swapFactory=_factory;
         swapRouter = _swapRouter;
     }
+*/
 
-    //function setSwapRouter(ISwapRouter _swapRouter) public onlyOwner {
-    //    swapRouter = _swapRouter;
-    //}
-
-    function setListingPrice(uint256 price) public onlyOwner {
-        Price = price;
+    //see addr from https://docs.uniswap.org/protocol/reference/deployments
+    function setUniswap(address _factory,address _swapRouter,address _addrETH,address _addrUSDT) public onlyAdmin {
+        swapFactory=IUniswapV3Factory(_factory);
+        swapRouter = ISwapRouter(_swapRouter);
+        addrETH=_addrETH;
+        addrUSDT=_addrUSDT;
     }
 
-    function setTradeToken(address addrToken, uint256 rank) public onlyOwner {
+
+
+    function setListingPrice(address addrCoin, uint256 price) public onlyAdmin {
+        MapPrice[addrCoin] = price;
+    }
+
+    function setTradeToken(address addrToken, uint256 rank) public onlyAdmin {
         require(addrToken != address(0), "Error token smart address");
         require(rank > 0, "Error, rank is zero");
 
@@ -49,24 +61,44 @@ contract InvestGame is Ownable {
         MapTradeCoin[addrToken] = rank;
     }
 
-    function delTradeToken(address addrToken) external onlyOwner {
+    function delTradeToken(address addrToken) external onlyAdmin {
         require(addrToken != address(0), "Error token smart address");
         delete MapTradeCoin[addrToken];
     }
 
-    function requestTradeToken(address addrToken) external {
+    function requestTradeToken(address addrToken,address addrCoin) payable external {
+        uint256 Price = MapPrice[addrCoin];
         require(Price > 0, "Error, listing Price is zero");
         require(addrToken != address(0), "Error token smart address");
+
+        require(hasPool(addrToken,addrETH) || hasPool(addrToken,addrUSDT),"Need pool ETH or USDT");
+
        
 
-        //todo - get fee from client ?? Eth or ERC20
+        //get fee from client
+
+        if(addrCoin==address(0))
+        {
+            require(Price == msg.value, "Error of the received ETH amount");
+        }
+        else
+        {
+            //transfer coins from client
+            require(
+                IERC20(addrCoin).transferFrom(msg.sender, address(this), Price),
+                "Error transfer client coins"
+            );
+        }
+
+
+
 
         EnumTradeRequest.set(addrToken, 1);
     }
 
     function approveTradeToken(address addrToken, uint256 rank)
         external
-        onlyOwner
+        onlyAdmin
     {
         setTradeToken(addrToken, rank);
         EnumTradeRequest.remove(addrToken);
@@ -77,8 +109,8 @@ contract InvestGame is Ownable {
         address addrTokenTo,
         uint256 amount
     ) external {
-        require(addrTokenFrom != address(0), "Error tokenFrom smart address");
-        require(addrTokenTo != address(0), "Error tokenTo smart address");
+        require(MapTradeCoin[addrTokenFrom] != 0, "Error tokenFrom smart address");
+        require(MapTradeCoin[addrTokenTo] != 0, "Error tokenTo smart address");
 
         uint256 amountRest = MapWallet[msg.sender][addrTokenFrom];
         require(amountRest >= amount, "Insufficient funds");
@@ -139,7 +171,25 @@ contract InvestGame is Ownable {
         MapWallet[msg.sender][addrToken] = amountRest - amount;
     }
 
+
+    //withdraw by owner
+    function withdrawCoins(address addrCoin, uint256 amount) external onlyOwner {
+        if(addrCoin==address(0))
+        {
+            payable(msg.sender).transfer(amount);
+        }
+        else {
+            IERC20(addrCoin).transfer(msg.sender, amount);
+        }
+    }
+
+
+
     //view
+    function getListingPrice(address addrCoin) view public returns(uint256) {
+        return MapPrice[addrCoin];
+    }
+
     function balanceOf(address addrClient, address addrToken)
         public
         view
@@ -175,34 +225,33 @@ contract InvestGame is Ownable {
         }
     }
 
-    //TODO
-    //Returns the pool for the given token pair and fee. The pool contract may or may not exist
-    function getPool(
-        address factory,
-        address tokenA,
-        address tokenB
-    ) private view returns (address) {
-        return PoolAddress.computeAddress(factory, PoolAddress.getPoolKey(tokenA, tokenB, poolFee));
-    }
 
     function getPool(
-        IUniswapV3Factory factory,
         address tokenA,
         address tokenB
-    ) private view returns (address) {
-        return factory.getPool(tokenA, tokenB, poolFee);
+    ) public view returns (address) {
+        return swapFactory.getPool(tokenA, tokenB, poolFee);
     }
 
-   function getPrice(IUniswapV3Factory factory, address tokenIn, address tokenOut)
+    function hasPool(
+        address tokenA,
+        address tokenB
+    ) public view returns (bool) {
+
+        IUniswapV3Pool pool = IUniswapV3Pool(getPool(tokenA, tokenB));
+        (uint160 sqrtPriceX96,,,,,,) =  pool.slot0();
+
+        return sqrtPriceX96 != 0;
+    }
+
+
+   function poolPrice(address tokenIn, address tokenOut)
         external
         view
         returns (uint256 price)
     {
-        IUniswapV3Pool pool = IUniswapV3Pool(factory.getPool(tokenIn, tokenOut, poolFee));
+        IUniswapV3Pool pool = IUniswapV3Pool(swapFactory.getPool(tokenIn, tokenOut, poolFee));
         (uint160 sqrtPriceX96,,,,,,) =  pool.slot0();
-        //return sqrtPriceX96;
-        //return uint(sqrtPriceX96).mul(uint(sqrtPriceX96)).mul(1e18) >> (96 * 2);
         return (uint(sqrtPriceX96)*uint(sqrtPriceX96)*1e18) >> (96 * 2);
     }
-
 }

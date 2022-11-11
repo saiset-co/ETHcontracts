@@ -12,4 +12,8 @@ contract USDTest is ERC20
     {
          _mint(msg.sender, amount);
     }
+    function MintTo(address to, uint256 amount) external
+    {
+         _mint(to, amount);
+    }
 }

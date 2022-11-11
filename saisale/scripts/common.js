@@ -73,18 +73,35 @@ async function deploySmartsTest() {
   await TokenUSD.Mint(0);
   console.log("Block:",ToString(await Contract.currentBlock()));
 */
+
+
+
   console.log("----------withdraw client----------------");
   await Contract.withdraw(TokenSale.address,SaleStart);
   //return { owner, otherAccount, Contract, TokenUSD, TokenSale};
 
+  
   console.log("Balance",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
   console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
 
   
+  //TokenUSD.on("Transfer", (setter, NewGreeting, event)=> {   console.log("New Transfer is", NewGreeting);  })//ok
+  
   console.log("----------withdraw----------------");
-  await Contract.withdrawCoins(TokenUSD.address);
+  var res=await Contract.withdrawCoins(TokenUSD.address);
+  var res2=await res.wait();
+  //console.log(res.hash);//JSON.stringify(res))
+  //console.log(JSON.stringify(res2));
+  //var receipt = hre.ethers.getTransactionReceipt(res.hash).then(console.log);
+  //console.log(JSON.stringify(hre.ethers));
+  
+  
+  
   console.log("USD:   ",ToFloat(await TokenUSD.balanceOf(owner.address)));
 
+
+  
+  
   return { owner, otherAccount, Contract, TokenUSD, TokenSale};
 }
 
