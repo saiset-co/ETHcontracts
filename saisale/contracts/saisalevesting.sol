@@ -167,7 +167,4 @@ contract SaiSaleVesting is Ownable {
         return MapSale[key];
     }
 
-    function currentBlock() public view returns (uint256) {
-        return block.timestamp;
-    }
 }

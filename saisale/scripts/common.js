@@ -57,7 +57,7 @@ async function deploySmartsTest() {
   await Contract.setSale(TokenSale.address, FromSum18(5000), Price, SaleStart,SaleStart+1000,Vesting);
   console.log("Sale info:",ToString(await Contract.getSale(TokenSale.address,SaleStart)));
   
-  console.log("Block:",ToString(await Contract.currentBlock()));
+  
 
   console.log("----------buy----------------");
   console.log("1 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
