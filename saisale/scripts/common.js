@@ -1,5 +1,7 @@
 const hre = require("hardhat");
 
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
+
 async function StartDeploy(Name, Param1) {
   console.log("Start deploy", Name, Param1 ? "with params length=" + (arguments.length - 1) : "");
 
@@ -48,10 +50,11 @@ async function deploySmartsTest() {
   await Contract.setCoin(TokenUSD.address,Rate);
 
 
-  var SaleStart=(await Contract.currentBlock())>>>0;
-  var Vesting = SaleStart + 2;
+  
+  var SaleStart=(await time.latest())>>>0;
+  var Vesting = SaleStart + 2000;
   console.log("SaleStart:",SaleStart);
-  await Contract.setSale(TokenSale.address, FromSum18(5000), Price, SaleStart,SaleStart+10,Vesting);
+  await Contract.setSale(TokenSale.address, FromSum18(5000), Price, SaleStart,SaleStart+1000,Vesting);
   console.log("Sale info:",ToString(await Contract.getSale(TokenSale.address,SaleStart)));
   
   console.log("Block:",ToString(await Contract.currentBlock()));
@@ -65,15 +68,9 @@ async function deploySmartsTest() {
   console.log("2 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
   console.log("Balance",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
   console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
-/*
-  console.log("----------pause----------------");
-  await TokenUSD.Mint(0);
-  console.log("Block:",ToString(await Contract.currentBlock()));
-  await sleep(1000);
-  await TokenUSD.Mint(0);
-  console.log("Block:",ToString(await Contract.currentBlock()));
-*/
 
+
+  await time.increaseTo(SaleStart+2000);
 
 
   console.log("----------withdraw client----------------");
