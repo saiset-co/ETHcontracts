@@ -75,7 +75,7 @@ async function deploySmartsTest1() {
   await TokenMatic.MintTo(otherAccount.address,FromSum18(5));
   
 
-  startTest(owner, otherAccount, Contract, UniSwap,UniSwap, TokenUSD, TokenMatic);
+  startTest(otherAccount, Contract, UniSwap,UniSwap, TokenUSD, TokenMatic);
 
   return {owner, Contract, UniSwap, TokenUSD, TokenMatic};
 }
@@ -111,12 +111,12 @@ async function deploySmartsTest2() {
   
     //await TokenUSD.connect(owner2).transfer(owner.address,FromSum6(1))
   
-    startTest(owner, owner2, Contract, Factory,UniSwap, TokenUSD, TokenMatic);
+    startTest(owner2, Contract, Factory,UniSwap, TokenUSD, TokenMatic);
     return {owner, Contract, UniSwap, TokenUSD, TokenMatic};
   }
   
 
-async function startTest(owner, client, Contract0, Factory, UniSwap, TokenUSD0, TokenMatic0) {
+async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMatic0) {
 
   console.log("----------startTest-------------");
 
@@ -215,7 +215,7 @@ function sleep(ms) {
 
 module.exports.deploySmarts = deploySmarts;
 module.exports.deploySmarts = deploySmartsTest1;
-module.exports.deploySmarts = deploySmartsTest2;
+//module.exports.deploySmarts = deploySmartsTest2;
 
 
 
