@@ -41,6 +41,9 @@ async function deploySmartsTest() {
   await TokenUSD.Mint(FromSum18(1000));
   await TokenSale.Mint(FromSum18(5000));
   await TokenSale.transfer(Contract.address,FromSum18(5000));
+
+  //await TokenUSD.connect(otherAccount).Mint(FromSum18(100));
+  //await TokenUSD.connect(otherAccount).approve(Contract.address,FromSum18(1000));
   
   console.log("USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
   console.log("Sale: ",ToFloat(await TokenSale.balanceOf(Contract.address)));
@@ -69,8 +72,9 @@ async function deploySmartsTest() {
   console.log("Balance",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
   console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
 
+  //await Contract.connect(otherAccount).buyToken(TokenSale.address,SaleStart,TokenUSD.address,FromSum18(100));
 
-  await time.increaseTo(SaleStart+2000);
+  await time.increaseTo(SaleStart+2100);
 
 
   console.log("----------withdraw client----------------");

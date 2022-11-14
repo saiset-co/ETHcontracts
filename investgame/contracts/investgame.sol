@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+//import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
@@ -11,9 +11,9 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./Admin.sol";
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
-contract InvestGame is Admin, Ownable {
+contract InvestGame is Admin {
     mapping(address => uint256) private MapPrice;
     mapping(address => uint256) private MapTradeCoin;
 
@@ -49,7 +49,7 @@ contract InvestGame is Admin, Ownable {
         address _swapRouter,
         address _addrETH,
         address _addrUSDT
-    ) public onlyOwner {
+    ) public onlyAdmin {
         swapFactory = IUniswapV3Factory(_factory);
         swapRouter = ISwapRouter(_swapRouter);
         addrETH = _addrETH;
@@ -88,6 +88,8 @@ contract InvestGame is Admin, Ownable {
         );
 
         //get fee from client
+
+        console.log("Price = %s",Price);
 
         if (addrCoin == address(0)) {
             require(Price == msg.value, "Error of the received ETH amount");
@@ -134,8 +136,8 @@ contract InvestGame is Admin, Ownable {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amount,
-                amountOutMinimum: 0, //!! - устанавливаем на ноль,но в продакшене это дает определенный риск. Для реального проекта, это значение должно быть рассчитано с использованием нашего SDK или оракула цен в сети — это помогает защититься от получения нехарактерно плохих цен для сделки ,которые могут являться следствием работы фронта или любого другого типа манипулирования ценой.
-                sqrtPriceLimitX96: 0 //!! - устанавливаем в 0 — это делает этот парамент неактивным.В продакшене, это значение можно использовать для установки предела цены, по которой своп будет проходить в пуле.
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
             });
 
         // The call to `exactInputSingle` executes the swap.
@@ -178,17 +180,6 @@ contract InvestGame is Admin, Ownable {
         MapWallet[msg.sender][addrToken] = amountRest - amount;
     }
 
-    //withdraw by owner
-    function withdrawCoins(address addrCoin, uint256 amount)
-        external
-        onlyOwner
-    {
-        if (addrCoin == address(0)) {
-            payable(msg.sender).transfer(amount);
-        } else {
-            IERC20(addrCoin).transfer(msg.sender, amount);
-        }
-    }
 
     //view
     function getListingPrice(address addrCoin) public view returns (uint256) {
@@ -245,11 +236,6 @@ contract InvestGame is Admin, Ownable {
         returns (bool)
     {
         return getPool(tokenA, tokenB)!=address(0);
-/*        IUniswapV3Pool pool = IUniswapV3Pool(getPool(tokenA, tokenB));
-        (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
-
-        return sqrtPriceX96 != 0;
-*/        
     }
     
 
@@ -265,3 +251,4 @@ contract InvestGame is Admin, Ownable {
         return (uint(sqrtPriceX96) * uint(sqrtPriceX96) * 1e18) >> (96 * 2);
     }
 }
+

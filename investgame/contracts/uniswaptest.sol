@@ -37,7 +37,7 @@ contract UniSwap {
     //as ISwapRouter
     function exactInputSingle(ISwapRouter.ExactInputSingleParams calldata params) external payable returns (uint256 amountOut)
     {
-        return params.amountIn;
+        return params.amountIn/1e12;
     }
 
 
