@@ -7,9 +7,17 @@ import "@openzeppelin/contracts/utils/Context.sol";
 abstract contract Admin is Context {
     address private _admin;
 
+    bool inited = false;
+
 
     constructor() {
         _transferAdminship(_msgSender());
+    }
+
+    modifier initializer() {
+        require(!inited, "already inited");
+        _;
+        inited = true;
     }
 
     modifier onlyAdmin() {

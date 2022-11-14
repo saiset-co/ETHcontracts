@@ -13,6 +13,7 @@ import "./Admin.sol";
 
 //import "hardhat/console.sol";
 
+
 contract InvestGame is Admin {
     mapping(address => uint256) private MapPrice;
     mapping(address => uint256) private MapTradeCoin;
@@ -49,7 +50,7 @@ contract InvestGame is Admin {
         address _swapRouter,
         address _addrETH,
         address _addrUSDT
-    ) public onlyAdmin {
+    ) public onlyAdmin initializer {
         swapFactory = IUniswapV3Factory(_factory);
         swapRouter = ISwapRouter(_swapRouter);
         addrETH = _addrETH;
