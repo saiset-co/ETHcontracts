@@ -194,7 +194,7 @@ function ToFloat(BigSum) {
 function ToFloat6(BigSum) {
   const Cents=10n**6n;
   var Sum = BigInt(BigSum);
-  var Str = Right("000000000000000000" + Sum % Cents, 18);
+  var Str = Right("000000" + Sum % Cents, 6);
   return "" + Sum / Cents + "." + Str;
 }
 
