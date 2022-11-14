@@ -1,7 +1,6 @@
-   function setUniswap(
-        address _factory,
-        address _swapRouter,
-        address _addrETH,
-        address _addrUSDT
- 
+   
+   
+   setUniswap(address _factory,address _swapRouter,address _addrETH,address _addrUSDT) - начальная инициализация смарт-контракта
+
+   
  

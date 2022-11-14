@@ -155,6 +155,7 @@ async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMa
 
   console.log("----------Trade-------------");
   await Contract.trade(TokenMatic.address,TokenUSD.address,FromSum18(4));
+  //await Contract.trade(TokenMatic.address,TokenUSD.address,FromSum18(1000));
   console.log("Client USD  :",ToFloat6(await Contract.balanceOf(client.address,TokenUSD.address)));
   console.log("Client Matic:",ToFloat(await Contract.balanceOf(client.address,TokenMatic.address)));
 

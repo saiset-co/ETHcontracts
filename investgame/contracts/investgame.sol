@@ -11,7 +11,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./Admin.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract InvestGame is Admin {
     mapping(address => uint256) private MapPrice;
@@ -89,7 +89,7 @@ contract InvestGame is Admin {
 
         //get fee from client
 
-        console.log("Price = %s",Price);
+        
 
         if (addrCoin == address(0)) {
             require(Price == msg.value, "Error of the received ETH amount");
@@ -142,6 +142,7 @@ contract InvestGame is Admin {
 
         // The call to `exactInputSingle` executes the swap.
         uint256 amountOut = swapRouter.exactInputSingle(params);
+        //console.log("amount=%s amountOut=%s",amount, amountOut);
 
         MapWallet[msg.sender][addrTokenFrom] = amountRest - amount;
         MapWallet[msg.sender][addrTokenTo] += amountOut;
