@@ -24,7 +24,7 @@ export { takeSnapshot, SnapshotRestorer } from "./helpers/takeSnapshot";
 
 //require("@nomiclabs/hardhat-ethers");
 
-const { MainAcc1 } = require("../../../../keys/test1.js");
+//const { MainAcc1 } = require("../../../../keys/test1.js");
 
 
 async function StartDeploy(Name, Param1) {
@@ -163,7 +163,7 @@ async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMa
   console.log("Matic: ", ToFloat(await TokenMatic.balanceOf(client.address)));
 
 
-  await Contract0.setTradeToken(TokenUSD.address, 1);
+  await Contract0.setTradeToken(TokenUSD.address, "{rank:1}");
   await Contract0.setListingPrice(TokenUSD.address, FromSum6(10));
 
   console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
@@ -174,7 +174,7 @@ async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMa
   console.log("Request:", ToString(await Contract.listTradeRequest(0, 10)));
 
 
-  await Contract0.approveTradeToken(TokenMatic.address, 100);
+  await Contract0.approveTradeToken(TokenMatic.address, "{rank:100}");
   console.log("Request:", ToString(await Contract.listTradeRequest(0, 10)));
   console.log("Rank:", ToString(await Contract.rankTradeToken(TokenMatic.address)));
 

@@ -13,10 +13,9 @@ import "./Admin.sol";
 
 //import "hardhat/console.sol";
 
-
 contract InvestGame is Admin {
     mapping(address => uint256) private MapPrice;
-    mapping(address => uint256) private MapTradeCoin;
+    mapping(address => string) private MapTradeCoin;
 
     //       client             token      amount
     mapping(address => mapping(address => uint256)) private MapWallet;
@@ -61,9 +60,12 @@ contract InvestGame is Admin {
         MapPrice[addrCoin] = price;
     }
 
-    function setTradeToken(address addrToken, uint256 rank) public onlyAdmin {
+    function setTradeToken(address addrToken, string memory rank)
+        public
+        onlyAdmin
+    {
         require(addrToken != address(0), "Error token smart address");
-        require(rank > 0, "Error, rank is zero");
+        require(isEmptyStr(rank) == false, "Error, rank length is zero");
 
         TransferHelper.safeApprove(addrToken, address(swapRouter), 1e36);
 
@@ -90,8 +92,6 @@ contract InvestGame is Admin {
 
         //get fee from client
 
-        
-
         if (addrCoin == address(0)) {
             require(Price == msg.value, "Error of the received ETH amount");
         } else {
@@ -105,7 +105,7 @@ contract InvestGame is Admin {
         EnumTradeRequest.set(addrToken, 1);
     }
 
-    function approveTradeToken(address addrToken, uint256 rank)
+    function approveTradeToken(address addrToken, string memory rank)
         external
         onlyAdmin
     {
@@ -119,10 +119,13 @@ contract InvestGame is Admin {
         uint256 amount
     ) external {
         require(
-            MapTradeCoin[addrTokenFrom] != 0,
+            isEmptyStr(MapTradeCoin[addrTokenFrom]) == false,
             "Error tokenFrom smart address"
         );
-        require(MapTradeCoin[addrTokenTo] != 0, "Error tokenTo smart address");
+        require(
+            isEmptyStr(MapTradeCoin[addrTokenTo]) == false,
+            "Error tokenTo smart address"
+        );
 
         uint256 amountRest = MapWallet[msg.sender][addrTokenFrom];
         require(amountRest >= amount, "Insufficient funds");
@@ -182,7 +185,6 @@ contract InvestGame is Admin {
         MapWallet[msg.sender][addrToken] = amountRest - amount;
     }
 
-
     //view
     function getListingPrice(address addrCoin) public view returns (uint256) {
         return MapPrice[addrCoin];
@@ -196,7 +198,11 @@ contract InvestGame is Admin {
         return MapWallet[addrClient][addrToken];
     }
 
-    function rankTradeToken(address addrToken) public view returns (uint256) {
+    function rankTradeToken(address addrToken)
+        public
+        view
+        returns (string memory)
+    {
         return MapTradeCoin[addrToken];
     }
 
@@ -231,15 +237,13 @@ contract InvestGame is Admin {
         return swapFactory.getPool(tokenA, tokenB, poolFee);
     }
 
- 
     function hasPool(address tokenA, address tokenB)
         public
         view
         returns (bool)
     {
-        return getPool(tokenA, tokenB)!=address(0);
+        return getPool(tokenA, tokenB) != address(0);
     }
-    
 
     function poolPrice(address tokenIn, address tokenOut)
         external
@@ -252,5 +256,10 @@ contract InvestGame is Admin {
         (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
         return (uint(sqrtPriceX96) * uint(sqrtPriceX96) * 1e18) >> (96 * 2);
     }
-}
 
+    //util
+    function isEmptyStr(string memory str) internal pure returns (bool) {
+        //console.log("String length = %s",bytes(str).length);
+        return bytes(str).length == 0;
+    }
+}
