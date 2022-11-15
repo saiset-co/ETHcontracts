@@ -259,7 +259,6 @@ contract InvestGame is Admin {
 
     //util
     function isEmptyStr(string memory str) internal pure returns (bool) {
-        //console.log("String length = %s",bytes(str).length);
         return bytes(str).length == 0;
     }
 }
