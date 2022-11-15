@@ -262,7 +262,7 @@ function sleep(ms) {
 
 module.exports.deploySmarts = deploySmarts;
 module.exports.deploySmarts = deploySmartsTest1;
-module.exports.deploySmarts = deploySmartsTest2;
+//module.exports.deploySmarts = deploySmartsTest2;
 //module.exports.deploySmarts = SmartsTest3;
 
 
