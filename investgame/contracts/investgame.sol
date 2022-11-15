@@ -30,12 +30,7 @@ contract InvestGame is Admin {
     address addrETH;
     address addrUSDT;
 
-    /*
-    constructor(IUniswapV3Factory _factory, ISwapRouter _swapRouter) {
-        swapFactory=_factory;
-        swapRouter = _swapRouter;
-    }
-*/
+
 
     //see addr from https://docs.uniswap.org/protocol/reference/deployments
     //Polygon:
