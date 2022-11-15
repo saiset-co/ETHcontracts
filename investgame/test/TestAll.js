@@ -10,12 +10,12 @@ const { expect } = require("chai");
 const {deploySmarts}=require("../scripts/common.js");
 
 
-describe("saioracle", function () {
+describe("investgame", function () {
 
   describe("Deployment", function () {
-    it("Check Owner Certificate", async function () {
+    it("Check1", async function () {
       const { owner, otherAccount, Contract} = await loadFixture(deploySmarts);
-      expect(await Contract.owner()).to.equal(owner.address);
+      expect(await Contract.admin()).to.equal(owner.address);
     });
 
   });
