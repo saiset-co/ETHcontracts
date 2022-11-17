@@ -99,9 +99,9 @@ contract Voting is ERC20 {
         require(block.number < expires, "Error block expires");
 
         //transfer coins from client
-        //todo Сделать заморозку через средневзвешенное значение по времени
-        
+        //todo Вместо _transfer сделать заморозку через средневзвешенное значение по времени
         _transfer(msg.sender, address(this), amount);
+
         MapWallet[msg.sender] += amount;
 
         if (isYes == 0) {
