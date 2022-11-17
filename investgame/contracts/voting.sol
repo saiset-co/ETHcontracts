@@ -111,7 +111,7 @@ contract Voting is ERC20 {
         }
     }
 
-    function approve(bytes32 key) external {
+    function approveVote(bytes32 key) external {
         SProposal memory data = MapProposal[key];
         require(data.method > EnumType.None, "Error key proposal");
 
@@ -228,6 +228,7 @@ contract Voting is ERC20 {
     ) internal override 
     {
         //check freeze time-amount
+        //uint256 Balance = balanceOf(from);
 
     }    
 }
