@@ -219,4 +219,15 @@ contract Voting is ERC20 {
             }
         }
     }
+
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override 
+    {
+        //check freeze time-amount
+
+    }    
 }
