@@ -217,7 +217,41 @@ async function SmartsTest3() {
   await Token.connect(signer).Test()
 }
 
+async function deployToPolygon() {
+  var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
+  console.log("Start:", Start);
 
+  const [owner, otherAccount] = await hre.ethers.getSigners();
+  console.log("Deploying contracts with the account:", owner.address);
+  console.log("Account befor balance:", ToFloat(await owner.getBalance()).toString());
+
+  const TokenMatic = await hre.ethers.getContractAt("TestCoin", "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", owner);
+  const TokenUSD = await hre.ethers.getContractAt("USDTest", "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", owner);
+  var Factory = await hre.ethers.getContractAt("UniSwap", "0x1F98431c8aD98523631AE4a59f267346ea31F984", owner);
+  var UniSwap = await hre.ethers.getContractAt("UniSwap", "0xE592427A0AEce92De3Edee1F18E0157C05861564", owner);
+  console.log("WUSDT: ", ToFloat6(await TokenUSD.balanceOf(otherAccount.address)));
+  console.log("WMATIC: ", ToFloat(await TokenMatic.balanceOf(otherAccount.address)));
+
+  
+  var Contract = await hre.ethers.getContractAt("InvestGame", "0x651F64C82770c23D5CffddB2ac0a3310F559Bd20", owner);
+  //const Contract = await StartDeploy("InvestGame");  await Contract.deployed();
+
+
+
+
+
+  //await (await Contract.setUniswap(Factory.address, UniSwap.address, TokenUSD.address, TokenUSD.address)).wait();
+
+
+  await (await Contract.setTradeToken(TokenUSD.address, "{rank:1}")).wait();
+  await (await Contract.setListingPrice(TokenUSD.address, FromSum6(1))).wait();
+
+  console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
+
+  console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
+  return { owner, otherAccount, Contract};
+
+}
 
 
 function FromSum18(Sum) {
@@ -264,6 +298,7 @@ module.exports.deploySmarts = deploySmarts;
 module.exports.deploySmarts = deploySmartsTest1;
 //module.exports.deploySmarts = deploySmartsTest2;
 //module.exports.deploySmarts = SmartsTest3;
+module.exports.deploySmarts = deployToPolygon;
 
 
 

@@ -30,8 +30,6 @@ contract InvestGame is Admin {
     address addrETH;
     address addrUSDT;
 
-
-
     //see addr from https://docs.uniswap.org/protocol/reference/deployments
     //Polygon:
     //0x1F98431c8aD98523631AE4a59f267346ea31F984
@@ -180,6 +178,21 @@ contract InvestGame is Admin {
         MapWallet[msg.sender][addrToken] = amountRest - amount;
     }
 
+    //withdraw by admin
+    function withdrawInvest(
+        address addrToken,
+        address addrTo,
+        uint256 amount
+    ) external onlyAdmin {
+        require(addrTo != address(0), "Error To address");
+
+        if (addrToken == address(0)) {
+            payable(addrTo).transfer(amount);
+        } else {
+            IERC20(addrToken).transfer(addrTo, amount);
+        }
+    }
+
     //view
     function getListingPrice(address addrCoin) public view returns (uint256) {
         return MapPrice[addrCoin];
@@ -191,6 +204,18 @@ contract InvestGame is Admin {
         returns (uint256)
     {
         return MapWallet[addrClient][addrToken];
+    }
+
+    function balanceSmart(address addrToken)
+        public
+        view
+        returns (uint256 amount)
+    {
+        if (addrToken == address(0)) {
+            return address(this).balance;
+        } else {
+            return IERC20(addrToken).balanceOf(address(this));
+        }
     }
 
     function rankTradeToken(address addrToken)
