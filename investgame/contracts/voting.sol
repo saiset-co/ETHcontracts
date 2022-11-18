@@ -273,7 +273,6 @@ contract Voting is ERC20 {
     }
 
 
-
      //Override ERC20
      function _beforeTokenTransfer(
         address from,
