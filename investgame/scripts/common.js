@@ -55,31 +55,35 @@ async function deploySmarts() {
   const UniSwap = await StartDeploy("UniSwap");
   const TokenUSD = await StartDeploy("USDTest");
   const TokenMatic = await StartDeploy("TestCoin");
+  const TokenA = await StartDeploy("TestCoin");
+  const TokenB = await StartDeploy("TestCoin");
 
   console.log("Admin:", (await Contract.admin()).toString());
 
   //await setBalance(owner.address,FromSum18("100000"));
 
   console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
-  return { owner, otherAccount, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
+  return { owner, otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, UniSwap, TokenUSD, TokenMatic };
 }
 
 async function deploySmartsTest1() {
   var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
   console.log("Start:", Start);
 
-  var { owner, otherAccount, Contract, Voting, UniSwap, TokenUSD, TokenMatic } = await deploySmarts();
+  var { owner, otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, UniSwap, TokenUSD, TokenMatic } = await deploySmarts();
 
 
 
   await TokenUSD.MintTo(Contract.address, FromSum6(1000));
   await TokenUSD.MintTo(otherAccount.address, FromSum6(1000));
   await TokenMatic.MintTo(otherAccount.address, FromSum18(1000));
+  await TokenA.MintTo(otherAccount.address, FromSum18(1000));
+  await TokenB.MintTo(otherAccount.address, FromSum18(1000));
 
 
-  await startTest(otherAccount, Contract, Voting, UniSwap, UniSwap, TokenUSD, TokenMatic);
+  await startTest(otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, UniSwap, TokenUSD, TokenMatic);
 
-  return { owner, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
+  return { owner, otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, TokenUSD, TokenMatic};
 }
 
 async function SendImpMoney(TokenAddr,FromAddr,ToAddr,Amount) {
@@ -120,7 +124,7 @@ async function deploySmartsTest2() {
   //return {};
 
 
-  var { owner, Contract, Voting } = await deploySmarts();
+  var { owner, Contract, Voting, TokenA, TokenB } = await deploySmarts();
 
 
   //var owner2 = new hre.ethers.Wallet(MainAcc1, hre.ethers.provider);
@@ -143,24 +147,138 @@ async function deploySmartsTest2() {
   
 
 
-  await startTest(otherAccount, Contract, Voting, Factory, UniSwap, TokenUSD, TokenMatic);
-  return { owner, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
+  await startTest(otherAccount, Contract, Voting, TokenA, TokenB, Factory, UniSwap, TokenUSD, TokenMatic);
+  return { owner, otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, TokenUSD, TokenMatic};
+}
+async function startTest(client, Contract0, Voting, TokenA, TokenB, Factory, UniSwap, TokenUSD0, TokenMatic0) 
+{
+  await startTest1(client, Contract0, Voting, TokenA, TokenB, Factory, UniSwap, TokenUSD0, TokenMatic0);
+  await startTest2(client, Contract0, Voting, TokenA, TokenB, Factory, UniSwap, TokenUSD0, TokenMatic0);
 }
 
-async function startTest(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0) 
+async function startTest2(client, Contract0, Voting0, TokenA, TokenB, Factory, UniSwap, TokenUSD0, TokenMatic0) 
 {
-  await startTest0(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0);
 
   console.log("----------Test voting-------------");
+  await (await Voting0.transfer(client.address,FromSum18(100000))).wait();
+
+  var Voting= Voting0.connect(client);
+  var TokenUSD = TokenUSD0.connect(client);
+  var Contract = Contract0.connect(client);
+
   await (await Contract0.transferAdminship(Voting.address)).wait();
 
-  await (await Voting.proposal(1,"0x0000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000",FromSum18(0.001),"New price")).wait();
-  await (await Voting.proposal(1,"0x0000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000",FromSum18(0.002),"New price2")).wait();
-  console.log("List:", ToString(await Voting.listProposal(0, 10)));
+  var List;
+  console.log("----------SetPeriod");
+  var Period=100;
+  await (await Voting.proposalSetPeriod(Period)).wait();
+  List = await Voting.listProposal(0, 10);
+  await (await Voting.approveVote(List[0].key)).wait();
+  List = await Voting.listProposal(0, 10);
+  console.log("List:", ToString(List));
+  console.log("Period:", ToString(await Voting.ProposalPeriod()));
 
+  
+
+  console.log("----------SetPrice");
+  await (await Voting.proposalSetPrice(FromSum18(0.001))).wait();
+  await (await Voting.proposalSetPrice(FromSum18(0.0001))).wait();
+  List = await Voting.listProposal(0, 10);
+  console.log("List:", (await Voting.lengthProposal())>>>0, "=>", ToString(List));
+
+  await (await Voting.vote(List[0].key,1,FromSum18(50000))).wait();
+  await (await Voting.vote(List[0].key,1,FromSum18(50000))).wait();
+  await (await Voting.vote(List[1].key,1,FromSum18(60000))).wait();
+
+
+  await time.increaseTo((await time.latest()) +Period+1);
+  await (await Voting.transfer(Voting.address,FromSum18(10000))).wait();
+  //await (await Voting.vote(List[0].key,1,FromSum18(100))).wait();
+  await (await Voting.approveVote(List[1].key)).wait();
+  await (await Voting.approveVote(List[0].key)).wait();
+  List = await Voting.listProposal(0, 10);
+  console.log("List:", (await Voting.lengthProposal())>>>0, "=>", ToString(List));
+  var Price=await Voting.ProposalPrice();
+  console.log("Price:", ToFloat(Price));
+
+  console.log("----------MintTo");
+  await (await Voting.proposalMintTo(client.address,FromSum18(50000),{value:Price})).wait();
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 DAO: ", ToFloat(await Voting.balanceOf(client.address)));
+  List = await Voting.listProposal(0, 10);
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 DAO: ", ToFloat(await Voting.balanceOf(client.address)));
+  
+  console.log("----------TransferFromTo");
+  await (await Voting.proposalTransferFromTo(Voting.address,client.address,FromSum18(10000),{value:Price})).wait();
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 DAO: ", ToFloat(await Voting.balanceOf(client.address)));
+  List = await Voting.listProposal(0, 10);
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 DAO: ", ToFloat(await Voting.balanceOf(client.address)));
+
+
+  console.log("----------Withdraw");
+  await (await Voting.proposalWithdraw(client.address,await Voting.balanceFee(),{value:Price})).wait();
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 ETH: ", ToFloat(await Voting.balanceFee()));
+  List = await Voting.listProposal(0, 10);
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 ETH: ", ToFloat(await Voting.balanceFee()));
+
+  console.log("----------SetListingPrice");
+  await (await Voting.proposalSetListingPrice(TokenUSD.address,FromSum6(2),{value:Price})).wait();
+  List = await Voting.listProposal(0, 10);
+  await (await Voting.vote(List[0].key,1,FromSum18(10000))).wait();
+  await (await Voting.vote(List[0].key,0,FromSum18(9000))).wait();
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 PriceList: ", ToFloat6(await Contract.getListingPrice(TokenUSD.address)));
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 PriceList: ", ToFloat6(await Contract.getListingPrice(TokenUSD.address)));
+  
+  console.log("----------SetTradeToken");
+  await (await Voting.proposalSetTradeToken(TokenUSD.address,"{rank:2,Level:12345}",{value:Price})).wait();
+  List = await Voting.listProposal(0, 10);
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenUSD.address)));
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenUSD.address)));
+  
+  console.log("----------ApproveTradeToken");
+  console.log("1 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
+  await TokenUSD.approve(Contract.address, FromSum6(1000));
+  await (await Contract.requestTradeToken(TokenA.address,TokenUSD.address)).wait();
+  console.log("2 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
+  await (await Voting.proposalApproveTradeToken(TokenA.address,"{rank:100,Level:20000, name='Token A'}",{value:Price})).wait();
+  List = await Voting.listProposal(0, 10);
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenA.address)));
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenA.address)));
+
+  console.log("----------DelTradeToken");
+  await (await Voting.proposalDelTradeToken(TokenA.address,{value:Price})).wait();
+  List = await Voting.listProposal(0, 10);
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenA.address)));
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenA.address)));
+
+  console.log("----------WithdrawListFee");
+  var Fee=await Contract.balanceFee(TokenUSD.address);
+  console.log("1 FEE: ", ToFloat6(Fee));
+  await (await Voting.proposalWithdrawListFee(TokenUSD.address,client.address,Fee,{value:Price})).wait();
+  List = await Voting.listProposal(0, 10);
+  await time.increaseTo((await time.latest()) +Period);
+  console.log("1 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
+  await (await Voting.approveVote(List[0].key)).wait();
+  console.log("2 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
+  
 }
 
-async function startTest0(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0) {
+
+
+async function startTest1(client, Contract0, Voting, TokenA, TokenB, Factory, UniSwap, TokenUSD0, TokenMatic0) {
 
   console.log("----------startTest-------------");
 
@@ -212,7 +330,7 @@ async function startTest0(client, Contract0, Voting, Factory, UniSwap, TokenUSD0
   console.log("Matic: ", ToFloat(await TokenMatic.balanceOf(client.address)));
 
   console.log("----------Withdraw Fee -------------");
-  await Contract0.withdrawInvest(TokenUSD.address,client.address, FromSum6(10));
+  await Contract0.withdrawListFee(TokenUSD.address,client.address, FromSum6(10));
   console.log("USD:    ", ToFloat6(await TokenUSD.balanceOf(client.address)));
   console.log("RestFee:", ToFloat6(await Contract.balanceFee(TokenUSD.address)));
 

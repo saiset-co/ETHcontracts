@@ -24,7 +24,7 @@ contract Voting is ERC20 {
         setTradeToken,
         delTradeToken,
         approveTradeToken,
-        withdrawInvest,
+        withdrawListFee,
         Last
     }
 
@@ -59,38 +59,40 @@ contract Voting is ERC20 {
     }
 
     //External
-    function proposal(
-        EnumType method,
-        address addr1,
-        address addr2,
-        uint256 amount,
-        string memory message
-    ) external payable {
-        require(ProposalPrice >= msg.value, "Error of the received ETH amount");
-        require(
-            method > EnumType.None && method < EnumType.Last,
-            "Error key proposal"
-        );
-
-        SProposal memory data = SProposal(
-            method,
-            addr1,
-            addr2,
-            amount,
-            message,
-            0,
-            1
-        );
-
-        bytes32 key = keccak256(abi.encode(data));
-        require(MapProposal[key].method == EnumType.None, "Duplicate proposal");
-
-        MapProposal[key] = data;
-
-        uint256 expires = block.number + ProposalPeriod;
-        EnumMapProposal.set(key, expires);
+    function proposalSetPrice(uint256 amount) external payable {
+        _createProposal(EnumType.SetProposalPrice,address(0),address(0),amount,"");
     }
-
+    function proposalSetPeriod(uint256 amount) external payable {
+        _createProposal(EnumType.SetProposalPeriod,address(0),address(0),amount,"");
+    }
+    function proposalMintTo(address to, uint256 amount) external payable {
+        _createProposal(EnumType.MintTo,to,address(0),amount,"");
+    }
+    function proposalTransferFromTo(address from,address to, uint256 amount) external payable {
+        _createProposal(EnumType.TransferFromTo,from,to,amount,"");
+    }
+    function proposalWithdraw(address to, uint256 amount) external payable {
+        _createProposal(EnumType.Withdraw,to,address(0),amount,"");
+    }
+    //Child
+    function proposalSetListingPrice(address token, uint256 amount) external payable {
+        _createProposal(EnumType.setListingPrice,token,address(0),amount,"");
+    }
+    function proposalSetTradeToken(address token, string memory rank) external payable {
+        _createProposal(EnumType.setTradeToken,token,address(0),0,rank);
+    }
+    function proposalDelTradeToken(address token) external payable {
+        _createProposal(EnumType.delTradeToken,token,address(0),0,"");
+    }
+    function proposalApproveTradeToken(address token, string memory rank) external payable {
+        _createProposal(EnumType.approveTradeToken,token,address(0),0,rank);
+    }
+    
+    function proposalWithdrawListFee(address token,address to, uint256 amount) external payable {
+        _createProposal(EnumType.withdrawListFee,token,to,amount,"");
+    }
+    
+    //Vote
     function vote(
         bytes32 key,
         uint256 isYes,
@@ -101,7 +103,7 @@ contract Voting is ERC20 {
         require(data.method > EnumType.None, "Error key proposal");
 
         uint256 expires = EnumMapProposal.get(key);
-        require(block.number < expires, "Error block expires");
+        require(block.timestamp < expires, "Error block time expires");
 
         //Client balance
         uint256 clientBalance = balanceOf(msg.sender);
@@ -120,11 +122,11 @@ contract Voting is ERC20 {
     }
 
     function approveVote(bytes32 key) external {
-        SProposal memory data = MapProposal[key];
+        SProposal memory data = _getPropasal(key);
         require(data.method > EnumType.None, "Error key proposal");
 
         uint256 expires = EnumMapProposal.get(key);
-        require(block.number >= expires, "Error block expires");
+        require(block.timestamp >= expires, "Error block time expires");
 
         if (data.vote1 > data.vote0) {
             if (data.method == EnumType.SetProposalPrice) {
@@ -152,16 +154,60 @@ contract Voting is ERC20 {
             if (data.method == EnumType.approveTradeToken) {
                 Child.approveTradeToken(data.addr1, data.message);
             }
-            if (data.method == EnumType.withdrawInvest) {
-                Child.withdrawInvest(data.addr1, data.addr2, data.amount);
+            if (data.method == EnumType.withdrawListFee) {
+                Child.withdrawListFee(data.addr1, data.addr2, data.amount);
             }
         }
 
+        _delPropasal(key);
+    }
+
+    //Internal
+    function _createProposal(
+        EnumType method,
+        address addr1,
+        address addr2,
+        uint256 amount,
+        string memory message
+    ) internal {
+        //console.log("ProposalPrice = %s, msg.value = %s",ProposalPrice ,msg.value);
+        require(msg.value >= ProposalPrice, "Error of the received ETH amount");
+        require(
+            method > EnumType.None && method < EnumType.Last,
+            "Error key proposal"
+        );
+
+        SProposal memory data = SProposal(
+            method,
+            addr1,
+            addr2,
+            amount,
+            message,
+            0,
+            1
+        );
+
+        bytes32 key = keccak256(abi.encode(data));
+        require(_getPropasal(key).method == EnumType.None, "Duplicate proposal");
+
+        MapProposal[key] = data;
+
+        uint256 expires = block.timestamp + ProposalPeriod;
+        EnumMapProposal.set(key, expires);
+    }
+
+
+    function _getPropasal(bytes32 key) internal view returns (SProposal memory)
+    {
+        return MapProposal[key];
+    }
+    function _delPropasal(bytes32 key) internal
+    {
         EnumMapProposal.remove(key);
         delete MapProposal[key];
     }
 
-    //Internal
+
     function _SetProposalPrice(uint256 _price) internal {
         ProposalPrice = _price;
     }
@@ -191,6 +237,11 @@ contract Voting is ERC20 {
     }
 
     //View
+    function getPropasal(bytes32 key) public view returns (SProposal memory)
+    {
+        return _getPropasal(key);
+    }
+
     function balanceFee() public view returns (uint256) {
         return address(this).balance;
     }
@@ -216,10 +267,11 @@ contract Voting is ERC20 {
                 (key, expires) = EnumMapProposal.at(startIndex + i);
                 Arr[i].key = key;
                 Arr[i].expires = expires;
-                Arr[i].data = MapProposal[key];
+                Arr[i].data = _getPropasal(key);
             }
         }
     }
+
 
 
      //Override ERC20
@@ -231,6 +283,6 @@ contract Voting is ERC20 {
     {
         //check freeze time-amount
         uint256 expires = MapFreezeTime[from];
-        require(block.number >= expires, "Block number error. Tokens are still frozen.");
+        require(block.timestamp >= expires, "Block times error. Tokens are still frozen.");
     }    
 }

@@ -182,7 +182,7 @@ contract InvestGame is Admin {
     }
 
     //withdraw by admin
-    function withdrawInvest(
+    function withdrawListFee(
         address addrToken,
         address addrTo,
         uint256 amount
