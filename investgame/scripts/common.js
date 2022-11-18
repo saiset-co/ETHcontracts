@@ -50,6 +50,7 @@ async function deploySmarts() {
   console.log("Account befor balance:", ToFloat(await owner.getBalance()).toString());
 
   const Contract = await StartDeploy("InvestGame");
+  await Contract.deployed();
   const Voting = await StartDeploy("Voting",Contract.address);
 
   const UniSwap = await StartDeploy("UniSwap");
@@ -134,6 +135,9 @@ async function deploySmartsTest2() {
   const TokenUSD = await hre.ethers.getContractAt("USDTest", "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", owner);
   var Factory = await hre.ethers.getContractAt("UniSwap", "0x1F98431c8aD98523631AE4a59f267346ea31F984", owner);
   var UniSwap = await hre.ethers.getContractAt("UniSwap", "0xE592427A0AEce92De3Edee1F18E0157C05861564", owner);
+
+  TokenA = await hre.ethers.getContractAt("TestCoin", "0x9c2c5fd7b07e95ee044ddeba0e97a665f142394f", otherAccount);//1INCH
+  
 
   await setBalance(otherAccount.address, FromSum18("200000"));
 
@@ -243,6 +247,8 @@ async function startTest2(client, Contract0, Voting0, TokenA, TokenB, Factory, U
   console.log("1 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenUSD.address)));
   await (await Voting.approveVote(List[0].key)).wait();
   console.log("2 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenUSD.address)));
+
+  
   
   console.log("----------ApproveTradeToken");
   console.log("1 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
@@ -370,20 +376,19 @@ async function deployToPolygon() {
   console.log("WMATIC: ", ToFloat(await TokenMatic.balanceOf(otherAccount.address)));
 
   
-  var Contract = await hre.ethers.getContractAt("InvestGame", "0x651F64C82770c23D5CffddB2ac0a3310F559Bd20", owner);
-  //const Contract = await StartDeploy("InvestGame");  await Contract.deployed();
-
-
-
-
-
-  //await (await Contract.setUniswap(Factory.address, UniSwap.address, TokenUSD.address, TokenUSD.address)).wait();
-
+  //var Contract = await hre.ethers.getContractAt("InvestGame", "0x651F64C82770c23D5CffddB2ac0a3310F559Bd20", owner);
+  const Contract = await StartDeploy("InvestGame");  await Contract.deployed();
+  await (await Contract.setUniswap(Factory.address, UniSwap.address, TokenUSD.address, TokenUSD.address)).wait();
 
   await (await Contract.setTradeToken(TokenUSD.address, "{rank:1}")).wait();
   await (await Contract.setListingPrice(TokenUSD.address, FromSum6(1))).wait();
 
   console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
+
+
+  const Voting = await StartDeploy("Voting",Contract.address);
+  await (await Contract.transferAdminship(Voting.address)).wait();
+
 
   console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
   return { owner, otherAccount, Contract};
@@ -425,10 +430,10 @@ function Sleep(ms) {
 
 
 module.exports.deploySmarts = deploySmarts;
-module.exports.deploySmarts = deploySmartsTest1;
-//module.exports.deploySmarts = deploySmartsTest2;
+module.exports.deploySmarts = deploySmartsTest1;//localhost
+//module.exports.deploySmarts = deploySmartsTest2;//localhost + fork
 //module.exports.deploySmarts = SmartsTest3;
-//module.exports.deploySmarts = deployToPolygon;
+//module.exports.deploySmarts = deployToPolygon;//polygon
 
 
 
