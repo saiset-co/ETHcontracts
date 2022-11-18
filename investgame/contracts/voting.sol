@@ -10,6 +10,7 @@ import "./investgame.sol";
 //import "hardhat/console.sol";
 
 contract Voting is ERC20 {
+    bool inited = false;
     uint256 public ProposalPrice;
     uint256 public ProposalPeriod;
     InvestGame Child;
@@ -53,9 +54,16 @@ contract Voting is ERC20 {
     //      client     time
     mapping(address => uint256) private MapFreezeTime;
 
-    constructor(address _Child) ERC20("Invest DAO token", "iDAO") {
-        Child = InvestGame(_Child);
+    modifier initializer() {
+        require(!inited, "already inited");
+        _;
+        inited = true;
+    }
+    constructor() ERC20("Invest DAO token", "iDAO") {
         _mint(msg.sender, 100000 * 10**18);
+    }
+    function setChild(address _Child) external initializer {
+        Child = InvestGame(_Child);
     }
 
     //External

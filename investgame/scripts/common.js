@@ -51,7 +51,8 @@ async function deploySmarts() {
 
   const Contract = await StartDeploy("InvestGame");
   await Contract.deployed();
-  const Voting = await StartDeploy("Voting",Contract.address);
+  const Voting = await StartDeploy("Voting");
+  await (await Voting.setChild(Contract.address)).wait();
 
   const UniSwap = await StartDeploy("UniSwap");
   const TokenUSD = await StartDeploy("USDTest");
@@ -361,6 +362,7 @@ async function SmartsTest3() {
 }
 
 async function deployToPolygon() {
+  console.log("==========deployToPolygon===========");
   var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
   console.log("Start:", Start);
 
@@ -376,18 +378,22 @@ async function deployToPolygon() {
   console.log("WMATIC: ", ToFloat(await TokenMatic.balanceOf(otherAccount.address)));
 
   
-  //var Contract = await hre.ethers.getContractAt("InvestGame", "0x651F64C82770c23D5CffddB2ac0a3310F559Bd20", owner);
+  //var Contract = await hre.ethers.getContractAt("InvestGame", "0x1c3cD15AD203D339AbAEaCF2C05B35508D73F392", owner);
+  ///*
   const Contract = await StartDeploy("InvestGame");  await Contract.deployed();
   await (await Contract.setUniswap(Factory.address, UniSwap.address, TokenUSD.address, TokenUSD.address)).wait();
 
   await (await Contract.setTradeToken(TokenUSD.address, "{rank:1}")).wait();
   await (await Contract.setListingPrice(TokenUSD.address, FromSum6(1))).wait();
-
+  //*/
   console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
 
 
-  const Voting = await StartDeploy("Voting",Contract.address);
+
+  const Voting = await StartDeploy("Voting"); await Voting.deployed();
+  //var Voting = await hre.ethers.getContractAt("Voting", "0x06847ABec1Fa3FAFf96df6B6c744B883C5d3F8A6", owner);
   await (await Contract.transferAdminship(Voting.address)).wait();
+  await (await Voting.setChild(Contract.address)).wait();
 
 
   console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
@@ -429,13 +435,10 @@ function Sleep(ms) {
 }
 
 
-module.exports.deploySmarts = deploySmarts;
+//module.exports.deploySmarts = deploySmarts;
 module.exports.deploySmarts = deploySmartsTest1;//localhost
 //module.exports.deploySmarts = deploySmartsTest2;//localhost + fork
 //module.exports.deploySmarts = SmartsTest3;
-//module.exports.deploySmarts = deployToPolygon;//polygon
-
-
-
+module.exports.deploySmarts = deployToPolygon;//polygon
 
 
