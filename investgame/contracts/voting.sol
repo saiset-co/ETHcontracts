@@ -33,7 +33,7 @@ contract Voting is ERC20 {
         address addr1;
         address addr2;
         uint256 amount;
-        string rank;
+        string message;
         uint128 vote0;
         uint128 vote1;
     }
@@ -48,20 +48,23 @@ contract Voting is ERC20 {
     using EnumerableMap for EnumerableMap.Bytes32ToUintMap;
     EnumerableMap.Bytes32ToUintMap private EnumMapProposal;
 
-    //       client     amount
-    mapping(address => uint256) private MapWallet;
+    //      proposel           client     amount
+    mapping(bytes32 => mapping(address => uint256)) private MapClientVoted;
+    //      client     time
+    mapping(address => uint256) private MapFreezeTime;
 
     constructor(address _Child) ERC20("Invest DAO token", "iDAO") {
         Child = InvestGame(_Child);
         _mint(msg.sender, 100000 * 10**18);
     }
 
+    //External
     function proposal(
         EnumType method,
         address addr1,
         address addr2,
         uint256 amount,
-        string memory rank
+        string memory message
     ) external payable {
         require(ProposalPrice >= msg.value, "Error of the received ETH amount");
         require(
@@ -74,12 +77,14 @@ contract Voting is ERC20 {
             addr1,
             addr2,
             amount,
-            rank,
+            message,
             0,
             1
         );
 
         bytes32 key = keccak256(abi.encode(data));
+        require(MapProposal[key].method == EnumType.None, "Duplicate proposal");
+
         MapProposal[key] = data;
 
         uint256 expires = block.number + ProposalPeriod;
@@ -98,11 +103,14 @@ contract Voting is ERC20 {
         uint256 expires = EnumMapProposal.get(key);
         require(block.number < expires, "Error block expires");
 
-        //transfer coins from client
-        //todo Вместо _transfer сделать заморозку через средневзвешенное значение по времени
-        _transfer(msg.sender, address(this), amount);
+        //Client balance
+        uint256 clientBalance = balanceOf(msg.sender);
+        require(clientBalance >= amount, "Vote amount exceeds balance");
 
-        MapWallet[msg.sender] += amount;
+        uint256 clientVoting = MapClientVoted[key][msg.sender] + amount;
+        require(clientBalance >= clientVoting, "Total vote amount exceeds balance");
+        MapClientVoted[key][msg.sender] = clientVoting;
+        MapFreezeTime[msg.sender] = expires;
 
         if (isYes == 0) {
             data.vote0 += uint128(amount);
@@ -128,7 +136,7 @@ contract Voting is ERC20 {
             } else if (data.method == EnumType.TransferFromTo) {
                 _TransferFromTo(data.addr1, data.addr2, data.amount);
             } else if (data.method == EnumType.Withdraw) {
-                _Withdraw(data.addr1, data.addr2, data.amount);
+                _Withdraw(data.addr1, data.amount);
             }
             //Child
             else if (data.method == EnumType.setListingPrice) {
@@ -136,13 +144,13 @@ contract Voting is ERC20 {
             }
 
             if (data.method == EnumType.setTradeToken) {
-                Child.setTradeToken(data.addr1, data.rank);
+                Child.setTradeToken(data.addr1, data.message);
             }
             if (data.method == EnumType.delTradeToken) {
                 Child.delTradeToken(data.addr1);
             }
             if (data.method == EnumType.approveTradeToken) {
-                Child.approveTradeToken(data.addr1, data.rank);
+                Child.approveTradeToken(data.addr1, data.message);
             }
             if (data.method == EnumType.withdrawInvest) {
                 Child.withdrawInvest(data.addr1, data.addr2, data.amount);
@@ -153,6 +161,7 @@ contract Voting is ERC20 {
         delete MapProposal[key];
     }
 
+    //Internal
     function _SetProposalPrice(uint256 _price) internal {
         ProposalPrice = _price;
     }
@@ -170,28 +179,20 @@ contract Voting is ERC20 {
         address to,
         uint256 amount
     ) internal {
+        MapFreezeTime[from] = 0;
         _transfer(from, to, amount);
     }
 
     function _Withdraw(
-        address addrToken,
         address addrTo,
         uint256 amount
     ) internal {
-        if (addrToken == address(0)) {
-            payable(addrTo).transfer(amount);
-        } else {
-            IERC20(addrToken).transfer(addrTo, amount);
-        }
+        payable(addrTo).transfer(amount);
     }
 
-    //view
-    function balanceSmart(address addrToken) public view returns (uint256) {
-        if (addrToken == address(0)) {
-            return address(this).balance;
-        } else {
-            return IERC20(addrToken).balanceOf(address(this));
-        }
+    //View
+    function balanceFee() public view returns (uint256) {
+        return address(this).balance;
     }
 
     function lengthProposal() public view returns (uint256) {
@@ -221,14 +222,15 @@ contract Voting is ERC20 {
     }
 
 
-    function _beforeTokenTransfer(
+     //Override ERC20
+     function _beforeTokenTransfer(
         address from,
-        address to,
-        uint256 amount
-    ) internal override 
+        address,
+        uint256
+    ) internal view override 
     {
         //check freeze time-amount
-        //uint256 Balance = balanceOf(from);
-
+        uint256 expires = MapFreezeTime[from];
+        require(block.number >= expires, "Block number error. Tokens are still frozen.");
     }    
 }

@@ -15,6 +15,7 @@ import "./Admin.sol";
 
 contract InvestGame is Admin {
     mapping(address => uint256) private MapPrice;
+    mapping(address => uint256) private MapFee;
     mapping(address => string) private MapTradeCoin;
 
     //       client             token      amount
@@ -94,6 +95,8 @@ contract InvestGame is Admin {
                 "Error transfer client coins"
             );
         }
+
+        MapFee[addrCoin] += Price;
 
         EnumTradeRequest.set(addrToken, 1);
     }
@@ -185,12 +188,15 @@ contract InvestGame is Admin {
         uint256 amount
     ) external onlyAdmin {
         require(addrTo != address(0), "Error To address");
+        require(MapFee[addrToken]>=amount,"Withdraw amount exceeds fee balance");
 
         if (addrToken == address(0)) {
             payable(addrTo).transfer(amount);
         } else {
             IERC20(addrToken).transfer(addrTo, amount);
         }
+
+        MapFee[addrToken]-=amount;
     }
 
     //view
@@ -206,16 +212,12 @@ contract InvestGame is Admin {
         return MapWallet[addrClient][addrToken];
     }
 
-    function balanceSmart(address addrToken)
+    function balanceFee(address addrToken)
         public
         view
         returns (uint256 amount)
     {
-        if (addrToken == address(0)) {
-            return address(this).balance;
-        } else {
-            return IERC20(addrToken).balanceOf(address(this));
-        }
+        return MapFee[addrToken];
     }
 
     function rankTradeToken(address addrToken)

@@ -50,6 +50,8 @@ async function deploySmarts() {
   console.log("Account befor balance:", ToFloat(await owner.getBalance()).toString());
 
   const Contract = await StartDeploy("InvestGame");
+  const Voting = await StartDeploy("Voting",Contract.address);
+
   const UniSwap = await StartDeploy("UniSwap");
   const TokenUSD = await StartDeploy("USDTest");
   const TokenMatic = await StartDeploy("TestCoin");
@@ -59,14 +61,14 @@ async function deploySmarts() {
   //await setBalance(owner.address,FromSum18("100000"));
 
   console.log("Account after balance:", ToFloat(await owner.getBalance()).toString());
-  return { owner, otherAccount, Contract, UniSwap, TokenUSD, TokenMatic };
+  return { owner, otherAccount, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
 }
 
 async function deploySmartsTest1() {
   var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
   console.log("Start:", Start);
 
-  var { owner, otherAccount, Contract, UniSwap, TokenUSD, TokenMatic } = await deploySmarts();
+  var { owner, otherAccount, Contract, Voting, UniSwap, TokenUSD, TokenMatic } = await deploySmarts();
 
 
 
@@ -75,9 +77,9 @@ async function deploySmartsTest1() {
   await TokenMatic.MintTo(otherAccount.address, FromSum18(1000));
 
 
-  await startTest(otherAccount, Contract, UniSwap, UniSwap, TokenUSD, TokenMatic);
+  await startTest(otherAccount, Contract, Voting, UniSwap, UniSwap, TokenUSD, TokenMatic);
 
-  return { owner, Contract, UniSwap, TokenUSD, TokenMatic };
+  return { owner, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
 }
 
 async function SendImpMoney(TokenAddr,FromAddr,ToAddr,Amount) {
@@ -118,7 +120,7 @@ async function deploySmartsTest2() {
   //return {};
 
 
-  var { owner, Contract } = await deploySmarts();
+  var { owner, Contract, Voting } = await deploySmarts();
 
 
   //var owner2 = new hre.ethers.Wallet(MainAcc1, hre.ethers.provider);
@@ -141,12 +143,24 @@ async function deploySmartsTest2() {
   
 
 
-  await startTest(otherAccount, Contract, Factory, UniSwap, TokenUSD, TokenMatic);
-  return { owner, Contract, UniSwap, TokenUSD, TokenMatic };
+  await startTest(otherAccount, Contract, Voting, Factory, UniSwap, TokenUSD, TokenMatic);
+  return { owner, Contract, Voting, UniSwap, TokenUSD, TokenMatic };
 }
 
+async function startTest(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0) 
+{
+  await startTest0(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0);
 
-async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMatic0) {
+  console.log("----------Test voting-------------");
+  await (await Contract0.transferAdminship(Voting.address)).wait();
+
+  await (await Voting.proposal(1,"0x0000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000",FromSum18(0.001),"New price")).wait();
+  await (await Voting.proposal(1,"0x0000000000000000000000000000000000000000","0x0000000000000000000000000000000000000000",FromSum18(0.002),"New price2")).wait();
+  console.log("List:", ToString(await Voting.listProposal(0, 10)));
+
+}
+
+async function startTest0(client, Contract0, Voting, Factory, UniSwap, TokenUSD0, TokenMatic0) {
 
   console.log("----------startTest-------------");
 
@@ -163,8 +177,9 @@ async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMa
   console.log("Matic: ", ToFloat(await TokenMatic.balanceOf(client.address)));
 
 
+  var ListingPrice = FromSum6(10);
   await Contract0.setTradeToken(TokenUSD.address, "{rank:1}");
-  await Contract0.setListingPrice(TokenUSD.address, FromSum6(10));
+  await Contract0.setListingPrice(TokenUSD.address, ListingPrice);
 
   console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
 
@@ -196,6 +211,10 @@ async function startTest(client, Contract0, Factory, UniSwap, TokenUSD0, TokenMa
   console.log("USD:   ", ToFloat6(await TokenUSD.balanceOf(client.address)));
   console.log("Matic: ", ToFloat(await TokenMatic.balanceOf(client.address)));
 
+  console.log("----------Withdraw Fee -------------");
+  await Contract0.withdrawInvest(TokenUSD.address,client.address, FromSum6(10));
+  console.log("USD:    ", ToFloat6(await TokenUSD.balanceOf(client.address)));
+  console.log("RestFee:", ToFloat6(await Contract.balanceFee(TokenUSD.address)));
 
 }
 
@@ -255,11 +274,10 @@ async function deployToPolygon() {
 
 
 function FromSum18(Sum) {
-  return hre.ethers.utils.parseEther(String(Sum));
-  //return ""+Sum+"000000000000000000";
+  return hre.ethers.utils.parseUnits(String(Sum), 18);
 }
 function FromSum6(Sum) {
-  return "" + Sum + "000000";
+  return hre.ethers.utils.parseUnits(String(Sum), 6);
 }
 
 function ToString(BigSum) {
@@ -267,16 +285,10 @@ function ToString(BigSum) {
 }
 
 function ToFloat(BigSum) {
-  const Cents = 10n ** 18n;
-  var Sum = BigInt(BigSum);
-  var Str = Right("000000000000000000" + Sum % Cents, 18);
-  return "" + Sum / Cents + "." + Str;
+  return hre.ethers.utils.formatUnits(BigSum, 18);
 }
 function ToFloat6(BigSum) {
-  const Cents = 10n ** 6n;
-  var Sum = BigInt(BigSum);
-  var Str = Right("000000" + Sum % Cents, 6);
-  return "" + Sum / Cents + "." + Str;
+  return hre.ethers.utils.formatUnits(BigSum, 6);
 }
 
 function Right(Str, count) {
@@ -287,7 +299,7 @@ function Right(Str, count) {
 }
 
 
-function sleep(ms) {
+function Sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -298,7 +310,7 @@ module.exports.deploySmarts = deploySmarts;
 module.exports.deploySmarts = deploySmartsTest1;
 //module.exports.deploySmarts = deploySmartsTest2;
 //module.exports.deploySmarts = SmartsTest3;
-module.exports.deploySmarts = deployToPolygon;
+//module.exports.deploySmarts = deployToPolygon;
 
 
 
