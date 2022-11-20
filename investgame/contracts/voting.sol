@@ -3,9 +3,8 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-
 import "./investgame.sol";
+import "./KeyList.sol";
 
 //import "hardhat/console.sol";
 
@@ -40,17 +39,19 @@ contract Voting is ERC20 {
     }
 
     struct SProposalInfo {
-        bytes32 key;
-        uint256 expires;
+        uint32 key;
+        uint192 expires;
         SProposal data;
     }
 
-    mapping(bytes32 => SProposal) MapProposal;
-    using EnumerableMap for EnumerableMap.Bytes32ToUintMap;
-    EnumerableMap.Bytes32ToUintMap private EnumMapProposal;
+    mapping(uint32 => SProposal) MapProposal;
+
+    using KeyList for KeyList.ListItems;
+    KeyList.ListItems private ListProposal;
+
 
     //      proposel           client     amount
-    mapping(bytes32 => mapping(address => uint256)) private MapClientVoted;
+    mapping(uint32 => mapping(address => uint256)) private MapClientVoted;
     //      client     time
     mapping(address => uint256) private MapFreezeTime;
 
@@ -92,8 +93,8 @@ contract Voting is ERC20 {
     function proposalDelTradeToken(address token) external payable {
         _createProposal(EnumType.delTradeToken,token,address(0),0,"");
     }
-    function proposalApproveTradeToken(address token, string memory rank) external payable {
-        _createProposal(EnumType.approveTradeToken,token,address(0),0,rank);
+    function proposalApproveTradeToken(uint32 key, string memory rank) external payable {
+        _createProposal(EnumType.approveTradeToken,address(0),address(0),key,rank);
     }
     
     function proposalWithdrawListFee(address token,address to, uint256 amount) external payable {
@@ -102,15 +103,16 @@ contract Voting is ERC20 {
     
     //Vote
     function vote(
-        bytes32 key,
-        uint256 isYes,
+        uint32 key,
+        uint8 isYes,
         uint256 amount
     ) external {
         require(amount > 0, "Zero amount");
-        SProposal storage data = MapProposal[key];
+        SProposal storage data = MapProposal[uint32(key)];
         require(data.method > EnumType.None, "Error key proposal");
 
-        uint256 expires = EnumMapProposal.get(key);
+        
+        uint256 expires = ListProposal.get(uint32(key));
         require(block.timestamp < expires, "Error block time expires");
 
         //Client balance
@@ -129,11 +131,11 @@ contract Voting is ERC20 {
         }
     }
 
-    function approveVote(bytes32 key) external {
+    function approveVote(uint32 key) external {
         SProposal memory data = _getPropasal(key);
         require(data.method > EnumType.None, "Error key proposal");
 
-        uint256 expires = EnumMapProposal.get(key);
+        uint256 expires = ListProposal.get(key);
         require(block.timestamp >= expires, "Error block time expires");
 
         if (data.vote1 > data.vote0) {
@@ -160,7 +162,7 @@ contract Voting is ERC20 {
                 Child.delTradeToken(data.addr1);
             }
             if (data.method == EnumType.approveTradeToken) {
-                Child.approveTradeToken(data.addr1, data.message);
+                Child.approveTradeToken(uint32(data.amount), data.message);
             }
             if (data.method == EnumType.withdrawListFee) {
                 Child.withdrawListFee(data.addr1, data.addr2, data.amount);
@@ -195,23 +197,23 @@ contract Voting is ERC20 {
             1
         );
 
-        bytes32 key = keccak256(abi.encode(data));
-        require(_getPropasal(key).method == EnumType.None, "Duplicate proposal");
+        //bytes32 key = keccak256(abi.encode(data));
+        //require(_getPropasal(key).method == EnumType.None, "Duplicate proposal");
+        uint192 expires = uint192(block.timestamp + ProposalPeriod);
+        uint32 key=ListProposal.add(expires);
 
         MapProposal[key] = data;
 
-        uint256 expires = block.timestamp + ProposalPeriod;
-        EnumMapProposal.set(key, expires);
     }
 
 
-    function _getPropasal(bytes32 key) internal view returns (SProposal memory)
+    function _getPropasal(uint32 key) internal view returns (SProposal memory)
     {
         return MapProposal[key];
     }
-    function _delPropasal(bytes32 key) internal
+    function _delPropasal(uint32 key) internal
     {
-        EnumMapProposal.remove(key);
+        ListProposal.remove(key);
         delete MapProposal[key];
     }
 
@@ -245,7 +247,7 @@ contract Voting is ERC20 {
     }
 
     //View
-    function getPropasal(bytes32 key) public view returns (SProposal memory)
+    function getPropasal(uint32 key) public view returns (SProposal memory)
     {
         return _getPropasal(key);
     }
@@ -254,28 +256,20 @@ contract Voting is ERC20 {
         return address(this).balance;
     }
 
-    function lengthProposal() public view returns (uint256) {
-        return EnumMapProposal.length();
-    }
 
-    function listProposal(uint256 startIndex, uint256 counts)
+    function listProposal(uint32 startKey, uint32 counts)
         public
         view
         returns (SProposalInfo[] memory Arr)
     {
-        uint256 length = EnumMapProposal.length();
+        (KeyList.SItemValue[] memory KeyArr, uint32 retCount) = ListProposal.getItems(startKey,counts);
 
-        if (startIndex < length) {
-            if (startIndex + counts > length) counts = length - startIndex;
-
-            bytes32 key;
-            uint256 expires;
-            Arr = new SProposalInfo[](counts);
-            for (uint256 i = 0; i < counts; i++) {
-                (key, expires) = EnumMapProposal.at(startIndex + i);
-                Arr[i].key = key;
-                Arr[i].expires = expires;
-                Arr[i].data = _getPropasal(key);
+        if (retCount>0) {
+            Arr = new SProposalInfo[](retCount);
+            for (uint256 i = 0; i < retCount; i++) {
+                Arr[i].key = KeyArr[i].key;
+                Arr[i].expires = KeyArr[i].value;
+                Arr[i].data = _getPropasal(Arr[i].key);
             }
         }
     }

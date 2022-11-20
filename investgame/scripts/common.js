@@ -68,6 +68,7 @@ async function deploySmarts() {
   return { owner, otherAccount, Contract, Voting, TokenA, TokenB, UniSwap, UniSwap, TokenUSD, TokenMatic };
 }
 
+  
 async function deploySmartsTest1() {
   var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
   console.log("Start:", Start);
@@ -189,7 +190,7 @@ async function startTest2(client, Contract0, Voting0, TokenA, TokenB, Factory, U
   await (await Voting.proposalSetPrice(FromSum18(0.001))).wait();
   await (await Voting.proposalSetPrice(FromSum18(0.0001))).wait();
   List = await Voting.listProposal(0, 10);
-  console.log("List:", (await Voting.lengthProposal())>>>0, "=>", ToString(List));
+  console.log("List:", ToString(List));
 
   await (await Voting.vote(List[0].key,1,FromSum18(50000))).wait();
   await (await Voting.vote(List[0].key,1,FromSum18(50000))).wait();
@@ -202,7 +203,7 @@ async function startTest2(client, Contract0, Voting0, TokenA, TokenB, Factory, U
   await (await Voting.approveVote(List[1].key)).wait();
   await (await Voting.approveVote(List[0].key)).wait();
   List = await Voting.listProposal(0, 10);
-  console.log("List:", (await Voting.lengthProposal())>>>0, "=>", ToString(List));
+  console.log("List:", ToString(List));
   var Price=await Voting.ProposalPrice();
   console.log("Price:", ToFloat(Price));
 
@@ -256,7 +257,10 @@ async function startTest2(client, Contract0, Voting0, TokenA, TokenB, Factory, U
   await TokenUSD.approve(Contract.address, FromSum6(1000));
   await (await Contract.requestTradeToken(TokenA.address,TokenUSD.address)).wait();
   console.log("2 USD: ", ToFloat6(await TokenUSD.balanceOf(client.address)));
-  await (await Voting.proposalApproveTradeToken(TokenA.address,"{rank:100,Level:20000, name='Token A'}",{value:Price})).wait();
+  List = await Contract.listTradeRequest(0, 10);
+  console.log("Request:", ToString(List));
+
+  await (await Voting.proposalApproveTradeToken(List[0].key,"{rank:100,name='Token A'}",{value:Price})).wait();
   List = await Voting.listProposal(0, 10);
   await time.increaseTo((await time.latest()) +Period);
   console.log("1 rankTradeToken: ", ToString(await Contract.rankTradeToken(TokenA.address)));
@@ -308,13 +312,15 @@ async function startTest1(client, Contract0, Voting, TokenA, TokenB, Factory, Un
 
   console.log("getPool:", await Contract.getPool(TokenMatic.address, TokenUSD.address));//WMATIC-USDT
 
+  var List;
   console.log("----------Listing-------------");
   await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
   //await Contract.requestTradeToken(TokenUSD.address,TokenUSD.address);
-  console.log("Request:", ToString(await Contract.listTradeRequest(0, 10)));
+  List = await Contract.listTradeRequest(0, 10);
+  console.log("Request:", ToString(List));
 
 
-  await Contract0.approveTradeToken(TokenMatic.address, "{rank:100}");
+  await Contract0.approveTradeToken(List[0].key, "{rank:100}");
   console.log("Request:", ToString(await Contract.listTradeRequest(0, 10)));
   console.log("Rank:", ToString(await Contract.rankTradeToken(TokenMatic.address)));
 
@@ -434,11 +440,102 @@ function Sleep(ms) {
   });
 }
 
+async function deploySmartsSpeed1() {
+  console.log("==========deploySmartsSpeed1===========");
+  var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
+  console.log("Start:", Start);
+
+  const [owner, otherAccount] = await hre.ethers.getSigners();
+
+
+  const Contract = await StartDeploy("InvestGame");  await Contract.deployed();
+  const UniSwap = await StartDeploy("UniSwap");
+  const TokenUSD = await StartDeploy("USDTest");
+  const TokenMatic = await StartDeploy("TestCoin");
+
+  await TokenUSD.MintTo(owner.address, FromSum6(1000));
+  await TokenUSD.approve(Contract.address, FromSum6(1000));
+
+  await (await Contract.setUniswap(UniSwap.address, UniSwap.address, TokenUSD.address, TokenUSD.address)).wait();
+  var ListingPrice = FromSum6(1);
+  await Contract.setListingPrice(TokenUSD.address, ListingPrice);
+
+  await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
+  await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
+  await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
+  List = await GetListRequest(Contract);
+
+  var key;
+  key=List[1].key;console.log("--------approve key",key); await Contract.approveTradeToken(key, "{}");
+  List = await GetListRequest(Contract);
+
+ 
+  key=List[0].key;console.log("--------approve key",key); await Contract.approveTradeToken(key, "{}");
+  List = await GetListRequest(Contract);
+
+  key=List[0].key;console.log("--------approve key",key); await Contract.approveTradeToken(key, "{}");
+  List = await GetListRequest(Contract);
+//*/
+  await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
+  await Contract.requestTradeToken(TokenMatic.address, TokenUSD.address);
+  List = await GetListRequest(Contract);
+  key=List[1].key;console.log("--------approve key",key); await Contract.approveTradeToken(key, "{}");
+  List = await GetListRequest(Contract);
+  key=List[0].key;console.log("--------approve key",key); await Contract.approveTradeToken(key, "{}");
+  List = await GetListRequest(Contract);
+}
+
+async function GetListRequest(Contract) {
+  var List=await Contract.listTradeRequest(0, 10);
+  console.log("Request:", ToString(List));
+  return List;
+  //console.log("Request:", List.first,List.last,":",ToString(List));
+  //return List.Arr;
+}
+
+async function deploySmartsSpeed2() {
+  console.log("==========deploySmartsSpeed2===========");
+  var Start = (await hre.ethers.provider.getBlockNumber()) >>> 0;
+  console.log("Start:", Start);
+
+  const [owner, otherAccount] = await hre.ethers.getSigners();
+
+  const Voting = await StartDeploy("Voting"); await Voting.deployed();
+  //const Voting2 = await StartDeploy("Voting2"); await Voting2.deployed();
+
+  await DoTestSpeed(owner,Voting);
+  //await DoTestSpeed(owner,Voting2);
+}
+
+async function DoTestSpeed(owner,Voting) {
+  //await (await Voting.proposalMintTo(owner.address,FromSum18(50000),{value:Price})).wait();
+  /*
+  await (await Voting.proposalSetPrice(FromSum18(0.001))).wait();
+  await (await Voting.proposalSetPrice(FromSum18(0.002))).wait();
+  await (await Voting.proposalSetPrice(FromSum18(0.003))).wait();
+  await (await Voting.proposalSetPrice(FromSum18(0.004))).wait();
+  await (await Voting.proposalSetPrice(FromSum18(0.005))).wait();
+  //*/
+  var Price=FromSum18(0);
+
+  await (await Voting.proposalTransferFromTo(Voting.address,owner.address,FromSum18(10000),{value:Price})).wait();
+  await (await Voting.proposalTransferFromTo(Voting.address,owner.address,FromSum18(10001),{value:Price})).wait();
+  //await (await Voting.proposalTransferFromTo(Voting.address,owner.address,FromSum18(10002),{value:Price})).wait();
+  //await (await Voting.proposalTransferFromTo(Voting.address,owner.address,FromSum18(10003),{value:Price})).wait();
+  //await (await Voting.proposalTransferFromTo(Voting.address,owner.address,FromSum18(10004),{value:Price})).wait();
+
+  var List = await Voting.listProposal(0, 10);
+  //console.log("Key0:",List[0].key); 
+  console.log("List:", ToString(List));
+}
+
 
 //module.exports.deploySmarts = deploySmarts;
-module.exports.deploySmarts = deploySmartsTest1;//localhost
 //module.exports.deploySmarts = deploySmartsTest2;//localhost + fork
 //module.exports.deploySmarts = SmartsTest3;
-module.exports.deploySmarts = deployToPolygon;//polygon
+//module.exports.deploySmarts = deployToPolygon;//polygon
+//module.exports.deploySmarts = deploySmartsSpeed2;//localhost
+//module.exports.deploySmarts = deploySmartsSpeed1;//localhost
+module.exports.deploySmarts = deploySmartsTest1;//localhost
 
 

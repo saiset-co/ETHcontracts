@@ -2,7 +2,7 @@
 pragma solidity ^0.8.7;
 
 //import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+//import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 
@@ -10,6 +10,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 
 import "./Admin.sol";
+import "./KeyList.sol";
 
 //import "hardhat/console.sol";
 
@@ -21,8 +22,9 @@ contract InvestGame is Admin {
     //       client             token      amount
     mapping(address => mapping(address => uint256)) private MapWallet;
 
-    using EnumerableMap for EnumerableMap.AddressToUintMap;
-    EnumerableMap.AddressToUintMap private EnumTradeRequest;
+    using KeyList for KeyList.ListItems;
+    KeyList.ListItems private ListTradeRequest;
+
 
     uint24 public constant poolFee = 3000; //set the pool fee to 0.3%.
     //ISwapRouter public immutable swapRouter;
@@ -31,13 +33,19 @@ contract InvestGame is Admin {
     address addrETH;
     address addrUSDT;
 
+    struct SRequesInfo {
+        uint32 key;
+        address token;
+    }
+
+
+
     //see addr from https://docs.uniswap.org/protocol/reference/deployments
     //Polygon:
     //0x1F98431c8aD98523631AE4a59f267346ea31F984
     //0xE592427A0AEce92De3Edee1F18E0157C05861564
     //0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
     //0xc2132d05d31c914a87c6611c10748aeb04b58e8f //mainnet
-
     function setUniswap(
         address _factory,
         address _swapRouter,
@@ -98,15 +106,16 @@ contract InvestGame is Admin {
 
         MapFee[addrCoin] += Price;
 
-        EnumTradeRequest.set(addrToken, 1);
+        ListTradeRequest.add(uint160(addrToken));
     }
 
-    function approveTradeToken(address addrToken, string memory rank)
+    function approveTradeToken(uint32 key, string memory rank)
         external
         onlyAdmin
     {
+        address addrToken=address(uint160(ListTradeRequest.get(key)));
         setTradeToken(addrToken, rank);
-        EnumTradeRequest.remove(addrToken);
+        ListTradeRequest.remove(key);
     }
 
     function trade(
@@ -228,28 +237,49 @@ contract InvestGame is Admin {
         return MapTradeCoin[addrToken];
     }
 
-    function lengthTradeRequest() public view returns (uint256) {
-        return EnumTradeRequest.length();
-    }
-
-    function listTradeRequest(uint256 startIndex, uint256 counts)
+   function listTradeRequest(uint32 startKey, uint32 counts)
         public
         view
-        returns (address[] memory Arr)
+        returns (SRequesInfo[] memory Arr)
     {
-        uint256 length = EnumTradeRequest.length();
+        (KeyList.SItemValue[] memory KeyArr, uint32 retCount) = ListTradeRequest.getItems(startKey,counts);
 
-        if (startIndex < length) {
-            if (startIndex + counts > length) counts = length - startIndex;
-
-            address key;
-            Arr = new address[](counts);
-            for (uint256 i = 0; i < counts; i++) {
-                (key, ) = EnumTradeRequest.at(startIndex + i);
-                Arr[i] = key;
+        if (retCount>0) {
+            Arr = new SRequesInfo[](retCount);
+            for (uint256 i = 0; i < retCount; i++) {
+                Arr[i].key = KeyArr[i].key;
+                Arr[i].token = address(uint160(KeyArr[i].value));
             }
         }
     }
+
+/*
+   struct SDebug
+   {
+        uint32 first;
+        uint32 last;
+        KeyList.SItemValue[] Arr;
+   }
+
+   function listTradeRequest(uint32 startKey, uint32 counts)
+        public
+        view
+        returns (SDebug memory Ret)
+    {
+        (KeyList.SItemValue[] memory KeyArr, uint32 retCount) = ListTradeRequest.getItems(startKey,counts);
+        Ret.first=ListTradeRequest.first;
+        Ret.last=ListTradeRequest.last;
+
+        if (retCount>0) {
+            Ret.Arr = new KeyList.SItemValue[](retCount);
+            for (uint256 i = 0; i < retCount; i++) {
+                Ret.Arr[i] = KeyArr[i];
+                Ret.Arr[i].value=111;
+            }
+        }
+    }
+//*/
+
 
     function getPool(address tokenA, address tokenB)
         public

@@ -14,7 +14,8 @@ describe("investgame", function () {
 
   describe("Deployment", function () {
     it("Check1", async function () {
-      const { owner, otherAccount, Contract, Voting} = await loadFixture(deploySmarts);
+      await loadFixture(deploySmarts);
+      //const { owner, otherAccount, Contract, Voting} = await loadFixture(deploySmarts);
       //expect(await Contract.admin()).to.equal(owner.address);
     });
 
