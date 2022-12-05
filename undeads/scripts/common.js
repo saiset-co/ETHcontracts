@@ -14,20 +14,23 @@ async function deploySmarts() {
   const Contract = await StartDeploy("UndeadsStaking");
   const TokenUSD = await StartDeploy("USDTest");
   const TokenSale = await StartDeploy("USDTest");
+  const NFT = await StartDeploy("SampleNFT");
 
   
 
   console.log("Account after balance:", (await owner.getBalance()).toString());
-  return { owner, otherAccount, Contract, TokenUSD, TokenSale};
+  return { owner, otherAccount, Contract, TokenUSD, TokenSale, NFT};
 }
 
 
 async function deploySmartTest() {
 
-  const { owner, otherAccount, Contract, TokenUSD, TokenSale} = await deploySmarts();
+  const { owner, otherAccount, Contract, TokenUSD, TokenSale, NFT} = await deploySmarts();
   await TokenUSD.Mint(FromSum18(1000));
   await TokenSale.Mint(FromSum18(5000));
   await TokenSale.transfer(Contract.address,FromSum18(5000));
+
+  await NFT.Mint(owner.address);
 
   //await TokenUSD.connect(otherAccount).Mint(FromSum18(100));
   //await TokenUSD.connect(otherAccount).approve(Contract.address,FromSum18(1000));
