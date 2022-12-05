@@ -100,8 +100,8 @@ contract MetableVesting is Ownable {
         IERC20 smartCoin = IERC20(addressCoin);
 
         //transfer coins from client
-        uint256 CoinAmount = (((amount * uint256(info.Price)) / 1e18) * rate) / 1e18;
-        smartCoin.safeTransferFrom(msg.sender, address(this), CoinAmount);
+        uint256 coinAmount = (((amount * uint256(info.Price)) / 1e18) * rate) / 1e18;
+        smartCoin.safeTransferFrom(msg.sender, address(this), coinAmount);
 
 
         //add client balance tokens
