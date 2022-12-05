@@ -23,12 +23,13 @@ contract MetableVesting is Ownable {
         uint48 First;//100000 = 100%
     }
 
+    mapping(address => uint256) private MapCoin;
+
     uint48 constant PERCENT_100=100000;//100%
 
 
     mapping(bytes32 => SSale) private MapSale;
     mapping(bytes32 => SVesting) private MapVesting;
-    mapping(address => uint256) private MapCoin;
     mapping(bytes32 => uint256) private MapPurchase;
     mapping(bytes32 => uint256) private MapWithdraw;
     
