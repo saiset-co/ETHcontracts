@@ -7,8 +7,7 @@ const { expect } = require("chai");
 
 
 //const hre = require("hardhat");
-//const {deploySmarts}=require("../scripts/common.js");
-const {deploySmarts}=require("../scripts/vesting.js");
+const {deploySmarts}=require("../scripts/common.js");
 
 
 describe("Metable", function () {

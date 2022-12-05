@@ -1,5 +1,22 @@
 const hre = require("hardhat");
 
+
+async function StartDeploy(Name, Param1) {
+    console.log("Start deploy", Name, Param1 ? "with params length=" + (arguments.length - 1) : "");
+  
+    var ArrArgs = [];
+    for (var i = 1; i < arguments.length; i++) {
+      ArrArgs.push(arguments[i]);
+    }
+  
+    var ContractTx = await hre.ethers.deployContract(Name, ArrArgs);//signerOrOptions
+  
+  
+    //await ContractTx.deployed();
+    console.log(`Deployed ${Name} to ${ContractTx.address}`);
+    return ContractTx;
+  }
+
 function FromSum(Sum) {
     return FromSum18(Sum);
 }
@@ -72,6 +89,7 @@ global.SaveParams = function (filename,data)
 }
 
 
+global.StartDeploy=StartDeploy;
 global.FromSum = FromSum18;
 global.FromSum18 = FromSum18;
 global.FromSum6 = FromSum6;
