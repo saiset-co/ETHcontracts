@@ -140,7 +140,7 @@ contract SaiSaleVesting is Ownable {
         smartCoin.transfer(msg.sender, amount);
     }
 
-    function withdrawEth() external {
+    function withdrawEth() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 
