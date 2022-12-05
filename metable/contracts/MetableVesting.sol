@@ -23,7 +23,7 @@ contract MetableVesting is Ownable {
         uint48 First;//100000 = 100%
     }
 
-    uint48 constant PERCENT_SCALE=100000;//100%
+    uint48 constant PERCENT_100=100000;//100%
 
 
     mapping(bytes32 => SSale) private MapSale;
@@ -137,10 +137,10 @@ contract MetableVesting is Ownable {
         uint256 balanceWithdraw = MapWithdraw[keyBalance];
 
         uint48 delta_periods = (uint48(block.timestamp)-info.Cliff)/info.Period;
-        uint48 percent = info.First + delta_periods*(PERCENT_SCALE-info.First)/(info.Counts-1);
-        if(percent>PERCENT_SCALE)
-            percent = PERCENT_SCALE;
-        uint256 amount = balance * percent / PERCENT_SCALE;
+        uint48 percent = info.First + delta_periods*(PERCENT_100-info.First)/(info.Counts-1);
+        if(percent>PERCENT_100)
+            percent = PERCENT_100;
+        uint256 amount = balance * percent / PERCENT_100;
 
         require(amount > balanceWithdraw,"There is nothing to withdraw");
         uint256 delta_amount = amount - balanceWithdraw;
