@@ -75,6 +75,7 @@ async function deploySmartVesting() {
   console.log("Purchase",ToFloat(await Contract.balanceOf(TokenSale.address,SaleStart)));
   //console.log("Token: ",ToFloat(await TokenSale.balanceOf(owner.address)));
 
+  console.log("Sale info:",ToString(await Contract.getSale(TokenSale.address,SaleStart)));
   //await Contract.connect(otherAccount).buyToken(TokenSale.address,SaleStart,TokenUSD.address,FromSum18(100));
 
   console.log("----------withdraw period 0----------------");
