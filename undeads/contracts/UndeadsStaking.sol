@@ -9,18 +9,35 @@ contract UndeadsStaking is Ownable
 {
     using SafeERC20 for IERC20;
 
-    struct SWallet{
-        uint96 Amount; //36+60 bits
-        uint96 Withdraw; //36+60 bits
-        uint32 Start; //timestamp
-        uint32 Period;
+
+    uint32 currentSeasonId;
+    uint48 timeStakeStart;
+    uint48 timeStakeEnd;
+    struct SSeason{
+        uint256 poolReward;
+        uint256 poolStake;
     }
 
-    uint256 poolReward;
-    uint256 poolStaking;
+    //        id   -> {SSeason}
+    mapping(uint256 => SSeason) private MapSeason;
+
+    struct SSession{
+        uint32 idSeason;
+        uint48 Start; //timestamp
+        uint48 End;   //timestamp
+        uint128 Amount;  //68+60 bits
+        uint128 Stake;   //68+60 bits
+        uint128 Withdraw;//68+60 bits
+    }
+
+    //      user    -> idSession -> {SSession}
+    mapping(address => mapping(uint256 => SSession)) private MapSession;
+    mapping(address => uint256) private MapSessionCounter;
+    
+
+
 
     IERC20 smartUDS;
-    mapping(address => SWallet) private MapWallet;
 
     constructor(address addrUDS)
     {
@@ -28,98 +45,187 @@ contract UndeadsStaking is Ownable
     }
 
 
-    //function setStaking()  external onlyOwner    {   }
-
-
-    function addReward(uint256 amount)  external onlyOwner
+    function setSeason(uint256 amount,uint48 timeStart,uint48 timeEnd)  external onlyOwner
     {
         require(amount>0,"Error, zero amount");
+
+        //transfer coins from client
+        smartUDS.safeTransferFrom(msg.sender, address(this), amount);
+
+        currentSeasonId++;
+        timeStakeStart=timeStart;
+        timeStakeEnd=timeEnd;
+        MapSeason[currentSeasonId]=SSeason(amount,0);
         
-        //transfer coins from client
-        smartUDS.safeTransferFrom(msg.sender, address(this), amount);
-        poolReward+=amount;
     }
 
-    function stake(uint256 amount,uint256 period)  external
+
+
+    function stake(uint256 amount,uint256 periodDay)  external
     {
         require(amount>0,"Error, zero amount");
-        require(period>0,"Error, zero period");
+        //require(periodDay>0,"Error, zero periodDay");
+        require(block.timestamp > timeStakeStart, "Error start staking time");
+        require(block.timestamp < timeStakeEnd, "Error end staking time");
+
+        uint256 amountStake;
+        if(periodDay==30)
+            amountStake=amount*1;
+        else
+        if(periodDay==60)
+            amountStake=amount*5;
+        else
+        if(periodDay==90)
+            amountStake=amount*10;
+        if(periodDay==120)
+            amountStake=amount*24;
+        else
+        if(periodDay==180)
+            amountStake=amount*40;
+        else
+        if(periodDay==365)
+            amountStake=amount*75;
+        else
+        if(periodDay==730)
+            amountStake=amount*170;
+        else {
+            revert("Error periodDay params");
+        }
+
+        amountStake=amountStake*periodDay/100/360;
+
 
         //transfer coins from client
         smartUDS.safeTransferFrom(msg.sender, address(this), amount);
 
-        SWallet storage info=MapWallet[msg.sender];
-        require(info.Amount==0,"Error, double staking");
 
-        info.Amount = uint96(amount);
-        info.Start = uint32(block.timestamp);
-        info.Period = uint32(period);
+        MapSessionCounter[msg.sender]++;
+        uint256 id=MapSessionCounter[msg.sender];
+        SSession storage Stake=MapSession[msg.sender][id];
 
-        poolStaking+=amount;
+        Stake.idSeason = currentSeasonId;
+        Stake.Start = uint48(block.timestamp);
+        Stake.End = uint48(block.timestamp + periodDay * 86400);
+        Stake.Amount = uint128(amount);
+        Stake.Stake =  uint128(amountStake);
+        Stake.Withdraw = 0;
+
+        SSeason storage Season = MapSeason[currentSeasonId];
+        Season.poolStake+=amountStake;
     }
 
-    function unstake()  external
+
+
+    function unstake(uint32 sessionId)  external
     {
-        SWallet memory info=MapWallet[msg.sender];
+        SSession memory Stake=MapSession[msg.sender][sessionId];
 
-        require(block.timestamp > info.Start+info.Period, "Error unstaking time");
+        require(block.timestamp > Stake.End, "Error unstaking time");
 
-        uint256 amount=info.Amount;
-        require(amount>0,"Zero amount");
+        uint256 amount=Stake.Amount;
+        require(amount>0,"Error sessionId");
 
         //calc reward
-        amount += _getReward(msg.sender);
+        amount += _getReward(Stake);
 
         //transfer coins to client
         smartUDS.safeTransfer(msg.sender, amount);
 
-        delete MapWallet[msg.sender];
+        delete MapSession[msg.sender][sessionId];
     }
 
-    function reward()  external
+
+    function reward(uint32 sessionId)  external
     {
-        SWallet memory info=MapWallet[msg.sender];
+        SSession storage Stake=MapSession[msg.sender][sessionId];
+        require(Stake.idSeason>0,"Error Id");
+
+        if(Stake.idSeason==currentSeasonId)
+        {
+            require(block.timestamp > timeStakeEnd, "Error reward time for current season");
+        }
+
 
         //calc reward
-        uint256 amount = _getReward(msg.sender);
-        require(amount>info.Withdraw,"There is nothing to withdraw reward");
-
-        uint256 delta = amount-info.Withdraw;
+        uint256 amount = _getReward(Stake);
+        require(amount>Stake.Withdraw,"There is nothing to withdraw reward");
+        uint256 delta = amount-Stake.Withdraw;
 
         //transfer coins to client
         smartUDS.safeTransfer(msg.sender, delta);
 
-        MapWallet[msg.sender].Withdraw += uint96(delta);
+        Stake.Withdraw += uint128(delta);
     }
+
     
 
-    function _getReward(address addr) private view returns (uint256)
+    function _getReward(SSession memory Stake) private view returns (uint256)
     {
-        uint256 K=1e18*poolReward/poolStaking;
+        SSeason memory Season = MapSeason[Stake.idSeason];
+        uint256 Price=1e18*Season.poolReward/Season.poolStake;
 
-        SWallet memory info=MapWallet[addr];
-        return info.Amount*K/1e18;
+        uint256 delta_time=block.timestamp-Stake.Start;
+        uint256 period=Stake.End-Stake.Start;
+        uint256 percent=100000*delta_time/period;
+        if(percent>100000)
+            percent=100000;
+        
+        
+        return Stake.Stake*Price*percent/100000/1e18;
     }
+
+
 
 
 
 
     //View
-    function balanceOf(address addr)
+    function rewardOf(address addr,uint32 sessionId)
         public
         view
         returns (uint256)
     {
-        return MapWallet[addr].Amount;
+        SSession memory Stake=MapSession[addr][sessionId];
+
+        return _getReward(Stake);
     }
 
-    function rewardOf(address addr)
+    function balanceOf(address addr,uint32 sessionId)
         public
         view
         returns (uint256)
     {
-        return _getReward(addr);
+        SSession memory Stake=MapSession[addr][sessionId];
+        return Stake.Amount;
     }
 
+    function lengthSessions(address addr)
+        public
+        view
+        returns (uint256)
+    {
+        return MapSessionCounter[addr];
+    }
+
+    function listSessions(address addr,uint256 startIndex,uint256 counts)
+        public
+        view
+        returns (SSession [] memory Arr)
+    {
+        uint256 length=MapSessionCounter[addr];
+        if(startIndex<1)
+            startIndex=1;
+        if (startIndex <= length) 
+        {
+            if (startIndex + counts > length + 1) counts = length + 1 - startIndex;
+
+            Arr = new SSession[](counts);
+            for (uint256 i = 0; i < counts; i++) 
+            {
+                Arr[i]=MapSession[addr][startIndex+i];
+            }
+        }
+    }
 }
+
 
