@@ -40,7 +40,7 @@ contract UndeadsStaking is Ownable
         poolReward+=amount;
     }
 
-    function staking(uint256 amount,uint256 period)  external
+    function stake(uint256 amount,uint256 period)  external
     {
         require(amount>0,"Error, zero amount");
         require(period>0,"Error, zero period");
@@ -57,12 +57,8 @@ contract UndeadsStaking is Ownable
 
         poolStaking+=amount;
     }
-    
 
-
-
-
-    function unstaking()  external
+    function unstake()  external
     {
         SWallet memory info=MapWallet[msg.sender];
 
@@ -80,11 +76,31 @@ contract UndeadsStaking is Ownable
         delete MapWallet[msg.sender];
     }
 
+    function reward()  external
+    {
+        SWallet memory info=MapWallet[msg.sender];
+
+        //calc reward
+        uint256 amount = _getReward(msg.sender);
+        require(amount>info.Withdraw,"There is nothing to withdraw reward");
+
+        uint256 delta = amount-info.Withdraw;
+
+        //transfer coins to client
+        smartUDS.safeTransfer(msg.sender, delta);
+
+        MapWallet[msg.sender].Withdraw += uint96(delta);
+    }
+    
+
     function _getReward(address addr) private view returns (uint256)
     {
+        uint256 K=1e18*poolReward/poolStaking;
+
         SWallet memory info=MapWallet[addr];
-        return info.Amount/1000000;
+        return info.Amount*K/1e18;
     }
+
 
 
 
