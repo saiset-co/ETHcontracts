@@ -10,9 +10,10 @@ contract UndeadsStaking is Ownable
     using SafeERC20 for IERC20;
 
 
-    uint32 currentSeasonId;
-    uint48 timeStakeStart;
-    uint48 timeStakeEnd;
+    uint32 public currentSeasonId;
+    uint48 public timeStakeStart;
+    uint48 public timeStakeEnd;
+
     struct SSeason{
         uint256 poolReward;
         uint256 poolStake;
@@ -180,6 +181,15 @@ contract UndeadsStaking is Ownable
 
 
     //View
+    function balanceOf(address addr,uint32 sessionId)
+        public
+        view
+        returns (uint256)
+    {
+        SSession memory Stake=MapSession[addr][sessionId];
+        return Stake.Amount;
+    }
+
     function rewardOf(address addr,uint32 sessionId)
         public
         view
@@ -188,15 +198,6 @@ contract UndeadsStaking is Ownable
         SSession memory Stake=MapSession[addr][sessionId];
 
         return _getReward(Stake);
-    }
-
-    function balanceOf(address addr,uint32 sessionId)
-        public
-        view
-        returns (uint256)
-    {
-        SSession memory Stake=MapSession[addr][sessionId];
-        return Stake.Amount;
     }
 
     function lengthSessions(address addr)
@@ -226,6 +227,36 @@ contract UndeadsStaking is Ownable
             }
         }
     }
+
+    function lengthSeasons()
+        public
+        view
+        returns (uint256)
+    {
+        return currentSeasonId;
+    }
+
+    function listSeasons(uint256 startIndex,uint256 counts)
+        public
+        view
+        returns (SSeason [] memory Arr)
+    {
+        uint256 length=currentSeasonId;
+        if(startIndex<1)
+            startIndex=1;
+        if (startIndex <= length) 
+        {
+            if (startIndex + counts > length + 1) counts = length + 1 - startIndex;
+
+            Arr = new SSeason[](counts);
+            for (uint256 i = 0; i < counts; i++) 
+            {
+                Arr[i]=MapSeason[startIndex+i];
+            }
+        }
+    }
+
+
 }
 
 
