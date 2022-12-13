@@ -134,7 +134,7 @@ contract UndeadsStaking is Ownable
     }
 
 
-    function _unstake(SSession memory Stake, uint32 sessionId) internal
+    function _unstake(SSession memory , uint32 sessionId) internal
     {
         /*
         if(poolStake>Stake.Stake)
