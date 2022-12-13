@@ -4,9 +4,11 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 contract UndeadsStaking is Ownable
 {
-    uint256 constant public PERCENT100=1e9;
+    uint256 constant internal PERCENT100=1e18;
 
     uint48 public timeStartPeriod;//time stamp
     uint32 public periodDelta;//delta sec
@@ -14,16 +16,16 @@ contract UndeadsStaking is Ownable
 
     uint32 public countAllPeriods;   //all periods
     uint32 public countFirstsPeriods;//count boost staking period
-    uint32 public percentFirstsPeriods;
+    uint256 public percentFirstsPeriods;
 
     uint256 public allReward;
     uint256 public poolStake;
 
 
     struct SSession{
-        uint48 Start; //timestamp
-        uint48 End;   //timestamp
-        uint128 Amount;  //68+60 bits
+        uint48 Start;    //timestamp
+        uint48 End;      //timestamp
+        uint128 Body;    //68+60 bits
         uint128 Stake;   //68+60 bits
         uint128 Withdraw;//68+60 bits
         uint256 idNFT;
@@ -51,6 +53,7 @@ contract UndeadsStaking is Ownable
 
 
 
+    //_percentFirstsPeriods 100% = 1e9
     function setup(uint256 _amount, uint48 _startPeriods, uint32 _periodDelta, uint32 _windowEnd, uint32 _countAllPeriods, uint32 _countFirstsPeriods,uint32 _percentFirstsPeriods)  external onlyOwner
     {
         require(_amount>0,"Error, zero amount");
@@ -65,7 +68,7 @@ contract UndeadsStaking is Ownable
 
         countAllPeriods=_countAllPeriods;
         countFirstsPeriods=_countFirstsPeriods;
-        percentFirstsPeriods=_percentFirstsPeriods;
+        percentFirstsPeriods=_percentFirstsPeriods*PERCENT100/1e9;
     }
 
     function setPeriod(uint32 _periodDelta)  external onlyOwner
@@ -77,44 +80,44 @@ contract UndeadsStaking is Ownable
 
     //Lib
 
-    function _stake(uint256 _amount,uint256 _AmountUse, uint256 _periodDay, uint256 idNFT)  internal
+    function _stake(uint256 _amountBody,uint256 _amountEffect, uint256 _periodDay, uint256 idNFT)  internal
     {
 
         uint256 CurTimePeriod=_GetCurPeriodTime();
 
-        require(_amount>0,"Error, zero amount");
+        require(_amountBody>0,"Error, zero amount");
         if(block.timestamp >= CurTimePeriod + windowEnd)
         {
             CurTimePeriod += periodDelta;
         }
 
 
-        uint256 amountStake;
+        uint256 PercentYear;
         if(_periodDay==30)
-            amountStake=_AmountUse*1;
+            PercentYear=1;
         else
         if(_periodDay==60)
-            amountStake=_AmountUse*5;
+            PercentYear=5;
         else
         if(_periodDay==90)
-            amountStake=_AmountUse*10;
+            PercentYear=10;
         else
         if(_periodDay==120)
-            amountStake=_AmountUse*24;
+            PercentYear=24;
         else
         if(_periodDay==180)
-            amountStake=_AmountUse*40;
+            PercentYear=40;
         else
         if(_periodDay==365)
-            amountStake=_AmountUse*75;
+            PercentYear=75;
         else
         if(_periodDay==730)
-            amountStake=_AmountUse*170;
+            PercentYear=170;
         else {
             revert("Error _periodDay params");
         }
 
-        amountStake=amountStake*_periodDay/100/360;
+        uint256 amountStake=_amountEffect*PercentYear/100/360;
 
 
         MapSessionCounter[msg.sender]++;
@@ -123,7 +126,7 @@ contract UndeadsStaking is Ownable
 
         Stake.Start = uint48(CurTimePeriod);
         Stake.End = uint48(CurTimePeriod + _periodDay * 86400);
-        Stake.Amount = uint128(_amount);
+        Stake.Body = uint128(_amountBody);
         Stake.Stake =  uint128(amountStake);
         Stake.Withdraw = 0;
         Stake.idNFT = idNFT;
@@ -141,7 +144,7 @@ contract UndeadsStaking is Ownable
 
 
 
-    function CurrentRewardPool(uint256 time) internal view returns(uint256)
+    function CurrentRewardPool(uint256 time) internal view returns(uint256 sumReward)
     {
         if(time<timeStartPeriod)
             return 0;
@@ -167,7 +170,9 @@ contract UndeadsStaking is Ownable
             }
         }
 
-        return allReward*Percent/PERCENT100;
+        sumReward = allReward*Percent/PERCENT100;
+
+        //console.log("Percent=%s, sumReward=%s",Percent,sumReward);
     }
 
 
@@ -178,9 +183,9 @@ contract UndeadsStaking is Ownable
         {
             uint256 time=block.timestamp;
             if(time>=Stake.End)
-                time=Stake.End-1;
+                time=Stake.End;
 
-            uint256 Price=1e18*CurrentRewardPool(time)/poolStake;
+            uint256 Price=1e24*CurrentRewardPool(time-1)/poolStake;
 
             uint256 delta_time=time-Stake.Start;
             uint256 period=Stake.End-Stake.Start;
@@ -189,7 +194,7 @@ contract UndeadsStaking is Ownable
                 percent=PERCENT100;
             
             
-            return Stake.Stake*Price*percent/PERCENT100/1e18;
+            return Stake.Stake*Price*percent/PERCENT100/1e24;
         }
         else
         {

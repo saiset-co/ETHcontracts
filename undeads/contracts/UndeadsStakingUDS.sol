@@ -6,7 +6,6 @@ import "./UndeadsStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import "hardhat/console.sol";
 
 
 interface UndeadNFT is IERC721 {
@@ -117,12 +116,10 @@ contract UndeadsStakingUDS is UndeadsStaking
         //refund reward
         _reward(sessionId,true);
 
-        uint256 amount=Stake.Amount;
-
-        if(amount>0)
+        if(Stake.Body>0)
         {
             //transfer coins staking body to client
-            smartUDS.safeTransfer(msg.sender, amount);
+            smartUDS.safeTransfer(msg.sender, Stake.Body);
         }
 
         if(Stake.idNFT>0)

@@ -67,7 +67,7 @@ contract UndeadsStakingUGOLD is UndeadsStaking
 
         
         //transfer coins staking body to client
-        smartGOLD.safeTransfer(msg.sender, Stake.Amount);
+        smartGOLD.safeTransfer(msg.sender, Stake.Body);
 
         //reward
         MapWallet[msg.sender]+=_getReward(Stake);

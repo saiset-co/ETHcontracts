@@ -52,20 +52,35 @@ async function deploySmartTest() {
   await time.increaseTo(Start);
 
   console.log("--------------------stake");
-  await (await StakingUDS.stake(FromSum18(100), 30, 0)).wait();
-  //await (await StakingUDS.connect(otherAccount).stake(FromSum18(100), 60, 0)).wait();
+  await (await StakingUDS.stake(FromSum18(100), 30, 0)).wait(); //Stake: 0.002777777777777777
+  await (await StakingUDS.connect(otherAccount).stake(FromSum18(100), 60, 0)).wait();//Stake: 0.013888888888888888
 
   console.log("allReward: ",ToFloat(await StakingUDS.allReward()),"/",ToFloat(await StakingUDS.poolStake()));
 
   //console.log("List: ",ToString(await StakingUDS.listSessions(owner.address,0,10)));
-  await time.increaseTo(Start+16);
+  //await time.increaseTo(Start+16);
+  //console.log("List: ",ToString(await StakingUDS.listSessions(owner.address,0,10)));
+  
+  await time.increaseTo(Start+60*Period);
   console.log("List: ",ToString(await StakingUDS.listSessions(owner.address,0,10)));
   
-  await time.increaseTo(Start+1*Period);
-  console.log("List: ",ToString(await StakingUDS.listSessions(owner.address,0,10)));
-  //333333329999999999999999
-  //21428562728571593999999999
+  //21428571428571427199999999 - один по 30
+  //10714285714285713599999999 - два по 30
+  // 3571428571428570557142857 - один 30 другой 60
+  
+  //33673469387755099199999999 - один по 60
+  
+
+  return;
  
+  console.log("--------------------reward");
+  await (await StakingUDS.reward(1)).wait();
+  console.log("1 TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
+
+  await time.increaseTo(Start+30*Period);
+  console.log("--------------------unstake");
+  await (await StakingUDS.unstake(1)).wait();
+  console.log("2 TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
 
 
 }
