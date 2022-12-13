@@ -116,6 +116,8 @@ contract UndeadsStakingUDS is UndeadsStaking
         //refund reward
         _reward(sessionId,true);
 
+        _unstake(Stake,sessionId);
+
         if(Stake.Body>0)
         {
             //transfer coins staking body to client
@@ -128,8 +130,6 @@ contract UndeadsStakingUDS is UndeadsStaking
             smartNFT.safeTransferFrom(address(this),msg.sender,Stake.idNFT);
         }
 
-
-        delete MapSession[msg.sender][sessionId];
     }
 
 

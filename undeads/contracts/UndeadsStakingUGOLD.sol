@@ -65,14 +65,13 @@ contract UndeadsStakingUGOLD is UndeadsStaking
         require(Stake.End>0,"Error sessionId");
         require(block.timestamp > Stake.End, "Error unstaking time");
 
-        
-        //transfer coins staking body to client
-        smartGOLD.safeTransfer(msg.sender, Stake.Body);
-
         //reward
         MapWallet[msg.sender]+=_getReward(Stake);
 
-        delete MapSession[msg.sender][sessionId];
+        _unstake(Stake,sessionId);
+
+        //transfer coins staking body to client
+        smartGOLD.safeTransfer(msg.sender, Stake.Body);
     }
 
 

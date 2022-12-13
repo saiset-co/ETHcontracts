@@ -80,10 +80,9 @@ contract UndeadsStaking is Ownable
 
     //Lib
 
-    function _stake(uint256 _amountBody,uint256 _amountEffect, uint256 _periodDay, uint256 idNFT)  internal
+    function _stake(uint256 _amountBody,uint256 _amountEffect, uint256 _periodDay, uint256 _idNFT)  internal
     {
-
-        uint256 CurTimePeriod=_GetCurPeriodTime();
+        uint256 CurTimePeriod=_currentPeriodTime();
 
         require(_amountBody>0,"Error, zero amount");
         if(block.timestamp >= CurTimePeriod + windowEnd)
@@ -129,12 +128,27 @@ contract UndeadsStaking is Ownable
         Stake.Body = uint128(_amountBody);
         Stake.Stake =  uint128(amountStake);
         Stake.Withdraw = 0;
-        Stake.idNFT = idNFT;
+        Stake.idNFT = _idNFT;
 
-        poolStake+=amountStake;
+        poolStake+=Stake.Stake;
     }
 
-    function _GetCurPeriodTime() internal view returns(uint256)
+
+    function _unstake(SSession memory Stake, uint32 sessionId) internal
+    {
+        /*
+        if(poolStake>Stake.Stake)
+            poolStake -= Stake.Stake;
+        else
+            poolStake = 0;
+            //*/
+            
+        delete MapSession[msg.sender][sessionId];
+    }
+
+
+
+    function _currentPeriodTime() private view returns(uint256)
     {
         require(block.timestamp > timeStartPeriod, "Error start staking time");
         uint256 PeriodNum = (block.timestamp-timeStartPeriod)/periodDelta;
@@ -144,7 +158,7 @@ contract UndeadsStaking is Ownable
 
 
 
-    function CurrentRewardPool(uint256 time) internal view returns(uint256 sumReward)
+    function _currentRewardPool(uint256 time) private view returns(uint256 sumReward)
     {
         if(time<timeStartPeriod)
             return 0;
@@ -185,7 +199,7 @@ contract UndeadsStaking is Ownable
             if(time>=Stake.End)
                 time=Stake.End;
 
-            uint256 Price=1e24*CurrentRewardPool(time-1)/poolStake;
+            uint256 Price=1e24*_currentRewardPool(time-1)/poolStake;
 
             uint256 delta_time=time-Stake.Start;
             uint256 period=Stake.End-Stake.Start;
