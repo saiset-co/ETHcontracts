@@ -19,7 +19,7 @@ contract UndeadsStakingUGOLD is Ownable
     using SafeERC20 for IERC20;
 
 
-    uint256 constant public PERCENT100=1e6;
+    uint256 constant public PERCENT100=1e9;
 
     uint48 public timeStartPeriod;//time stamp
     uint32 public periodDelta;//delta sec
@@ -191,12 +191,13 @@ contract UndeadsStakingUGOLD is Ownable
     }
 
 
-    function CurrentRewardPool() public view returns(uint256)
+   function CurrentRewardPool(uint256 time) public view returns(uint256)
     {
-        if(block.timestamp<timeStartPeriod)
+        if(time<timeStartPeriod)
             return 0;
 
-        uint256 PeriodNum = (block.timestamp-timeStartPeriod)/periodDelta;
+        uint256 PeriodNum = (time-timeStartPeriod)/periodDelta;
+
         uint256 Percent;
         if(PeriodNum<countFirstsPeriods)
         {
@@ -207,15 +208,14 @@ contract UndeadsStakingUGOLD is Ownable
             if(PeriodNum<countAllPeriods)
             {
                 uint256 Percent1 = percentFirstsPeriods*countFirstsPeriods;
-                uint256 Percent2 = (PERCENT100-Percent1)/countAllPeriods;
-                Percent = Percent1 + Percent2*(1+PeriodNum-percentFirstsPeriods);
+                uint256 Percent2 = (PERCENT100-Percent1)/(countAllPeriods-countFirstsPeriods);
+                Percent = Percent1 + Percent2*(1+PeriodNum-countFirstsPeriods);
             }
             else
             {
                 Percent=PERCENT100;//100%
             }
         }
-        
 
         return allReward*Percent/PERCENT100;
     }
@@ -224,11 +224,15 @@ contract UndeadsStakingUGOLD is Ownable
 
     function _getReward(SSession memory Stake) private view returns (uint256 )
     {
-        if(poolStake!=0 && block.timestamp>Stake.Start)
+        if(poolStake!=0 && block.timestamp>Stake.Start + windowEnd)
         {
-            uint256 Price=1e18*CurrentRewardPool()/poolStake;
+            uint256 time=block.timestamp;
+            if(time>=Stake.End)
+                time=Stake.End-1;
 
-            uint256 delta_time=block.timestamp-Stake.Start;
+            uint256 Price=1e18*CurrentRewardPool(time)/poolStake;
+
+            uint256 delta_time=time-Stake.Start;
             uint256 period=Stake.End-Stake.Start;
             uint256 percent=PERCENT100*delta_time/period;
             if(percent>PERCENT100)
