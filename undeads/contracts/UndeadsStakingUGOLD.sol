@@ -37,14 +37,6 @@ contract UndeadsStakingUGOLD is UndeadsStaking
 
         pathAMM=[addrUGOLD,addrUDS];
         saleAddress=addrSale;
-        
-
-   
-        periodDelta=86400;
-        countFirstsPeriods=60;
-        percentFirstsPeriods=uint32(PERCENT100*10/30/100);
-
-        windowEnd=30;
     }
     
 

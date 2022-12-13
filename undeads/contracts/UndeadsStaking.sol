@@ -38,6 +38,18 @@ contract UndeadsStaking is Ownable
     mapping(address => mapping(uint256 => SSession)) internal MapSession;
     mapping(address => uint256) internal MapSessionCounter;
 
+    constructor()
+    {
+        /*
+        periodDelta=86400;
+        countFirstsPeriods=60;
+        percentFirstsPeriods=uint32(PERCENT100*10/30/100);
+
+        windowEnd=30;
+        */
+    }
+
+
 
     function setup(uint256 _amount, uint48 _startPeriods, uint32 _periodDelta, uint32 _windowEnd, uint32 _countAllPeriods, uint32 _countFirstsPeriods,uint32 _percentFirstsPeriods)  external onlyOwner
     {
@@ -118,7 +130,7 @@ contract UndeadsStaking is Ownable
 
         poolStake+=amountStake;
     }
-        
+
     function _GetCurPeriodTime() internal view returns(uint256)
     {
         require(block.timestamp > timeStartPeriod, "Error start staking time");
