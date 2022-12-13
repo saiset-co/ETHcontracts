@@ -16,4 +16,9 @@ contract SampleNFT is PrimaryNFT {
     function Burn(uint256 tokenId) external onlyOwner {
         _burn(tokenId);
     }
+
+    function getPrice(uint256 id) external returns(uint256)
+    {
+        return 1e18;
+    }
 }

@@ -155,6 +155,7 @@ contract UndeadsStakingUDS is Ownable
         else
         if(_periodDay==90)
             amountStake=Amount*10;
+        else
         if(_periodDay==120)
             amountStake=Amount*24;
         else
