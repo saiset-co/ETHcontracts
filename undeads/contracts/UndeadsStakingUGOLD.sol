@@ -52,7 +52,7 @@ contract UndeadsStakingUGOLD is Ownable
 
 
 
-    IERC20 smartUDS;
+    IERC20 smartGOLD;
     IRouter smartAMM;
     address[] public pathAMM;
     address saleAddress;
@@ -60,7 +60,7 @@ contract UndeadsStakingUGOLD is Ownable
 
     constructor(address addrUDS,address addrUGOLD, address addrAMM, address addrSale)
     {
-        smartUDS=IERC20(addrUDS);
+        smartGOLD=IERC20(addrUGOLD);
         smartAMM=IRouter(addrAMM);
 
         pathAMM=[addrUGOLD,addrUDS];
@@ -125,7 +125,7 @@ contract UndeadsStakingUGOLD is Ownable
 
 
         //transfer coins from client
-        smartUDS.safeTransferFrom(msg.sender, address(this), _amount);
+        smartGOLD.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint[] memory amounts = smartAMM.getAmountsOut(_amount, pathAMM);
         uint256 Amount=amounts[0];
@@ -182,7 +182,7 @@ contract UndeadsStakingUGOLD is Ownable
 
         
         //transfer coins staking body to client
-        smartUDS.safeTransfer(msg.sender, Stake.Amount);
+        smartGOLD.safeTransfer(msg.sender, Stake.Amount);
 
         //reward
         MapWallet[msg.sender]+=_getReward(Stake);
