@@ -21,4 +21,6 @@ contract NFTTest is PrimaryNFT {
     {
         return 100e18;
     }
+
+
 }
