@@ -116,7 +116,8 @@ contract UndeadsStaking is Ownable
             revert("Error _periodDay params");
         }
 
-        uint256 amountStake=_amountEffect*PercentYear/100/360;
+        //uint256 amountStake=_amountEffect*PercentYear/100/360;
+        uint256 amountStake=_amountEffect*_periodDay*PercentYear/100/360;
 
 
         MapSessionCounter[msg.sender]++;
