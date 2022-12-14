@@ -6,6 +6,7 @@ import "./UndeadsStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+//import "hardhat/console.sol";
 
 
 interface UndeadNFT is IERC721 {
@@ -54,7 +55,7 @@ contract UndeadsStakingUDS is UndeadsStaking
         if(idNFT>0)
         {
             //transfer NFT from client
-            smartNFT.safeTransferFrom(msg.sender,address(this),idNFT);
+            smartNFT.transferFrom(msg.sender,address(this),idNFT);
 
             AmountUse += smartNFT.getPrice(idNFT);
         }
@@ -91,7 +92,8 @@ contract UndeadsStakingUDS is UndeadsStaking
         uint256 delta = amount-Stake.Withdraw;
         if(Stake.idNFT>0)
         {
-            smartUDS.safeApprove(address(smartAMM),delta);
+            //AMM swap
+            smartUDS.safeIncreaseAllowance(address(smartAMM),delta);
             smartAMM.swapExactTokensForTokens(delta, 0, pathAMM, msg.sender,block.timestamp);
         }
         else {
@@ -127,7 +129,7 @@ contract UndeadsStakingUDS is UndeadsStaking
         if(Stake.idNFT>0)
         {
             //transfer NFT staking body to client
-            smartNFT.safeTransferFrom(address(this),msg.sender,Stake.idNFT);
+            smartNFT.transferFrom(address(this),msg.sender,Stake.idNFT);
         }
 
     }

@@ -13,8 +13,7 @@ async function deploySmarts() {
 
   const TokenUDS = await StartDeploy("USDTest");
   const TokenUGOLD = await StartDeploy("USDTest");
-  const TokenSale = await StartDeploy("USDTest");
-  const NFT = await StartDeploy("SampleNFT");
+  const NFT = await StartDeploy("NFTTest");
   const AMM = await StartDeploy("AMMTest");
 
   const StakingUDS = await StartDeploy("UndeadsStakingUDS",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
@@ -38,6 +37,7 @@ async function deploySmartTest() {
 
   await TokenUDS.approve(StakingUDS.address,FromSum18(1e6));
   await TokenUDS.connect(otherAccount).approve(StakingUDS.address,FromSum18(1e6));
+  await NFT.approve(StakingUDS.address,1);
 
   
   console.log("TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
@@ -52,7 +52,7 @@ async function deploySmartTest() {
   await time.increaseTo(Start);
 
   console.log("--------------------stake");
-  await (await StakingUDS.stake(FromSum18(100), 30, 0)).wait();
+  await (await StakingUDS.stake(FromSum18(100), 60, 1)).wait();
   await (await StakingUDS.connect(otherAccount).stake(FromSum18(100), 60, 0)).wait();
 
   console.log("allReward: ",ToFloat(await StakingUDS.allReward()),"/",ToFloat(await StakingUDS.poolStake()));
@@ -67,7 +67,7 @@ async function deploySmartTest() {
  
   
  
-  console.log("--------------------reward 1");
+  //console.log("--------------------reward 1");
   await (await StakingUDS.reward(1)).wait();
   //console.log("1 TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
 
@@ -79,7 +79,7 @@ async function deploySmartTest() {
   
 
 
-  console.log("--------------------reward 2");
+  //console.log("--------------------reward 2");
   await (await StakingUDS.connect(otherAccount).reward(1)).wait();
   //console.log("1 TokenUDS: ",ToFloat(await TokenUDS.balanceOf(otherAccount.address)));
 

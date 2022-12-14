@@ -4,7 +4,7 @@ pragma solidity ^0.8.7;
 import "./PrimaryNFT.sol";
 
 
-contract SampleNFT is PrimaryNFT {
+contract NFTTest is PrimaryNFT {
 
     constructor() PrimaryNFT("Sample NFT", "NFT") {}
 
@@ -17,8 +17,8 @@ contract SampleNFT is PrimaryNFT {
         _burn(tokenId);
     }
 
-    function getPrice(uint256 id) external returns(uint256)
+    function getPrice(uint256 ) external pure returns(uint256)
     {
-        return 1e18;
+        return 100e18;
     }
 }

@@ -2,9 +2,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract AMMTest
 {
+    using SafeERC20 for IERC20;
+
+
     constructor()
     {
 
@@ -21,11 +25,18 @@ contract AMMTest
         address[] calldata path,
         address to,
         uint deadline
-    ) external pure returns (uint[] memory amounts)
+    ) external returns (uint[] memory amounts)
     {
+
+        IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
+
+        IERC20(path[0]).safeTransfer(to, amountIn);
+
+
         amounts=new uint[](1);
         amounts[0]=amountIn;
     }
+
 
 }
 
