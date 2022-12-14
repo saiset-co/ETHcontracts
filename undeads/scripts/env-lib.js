@@ -12,7 +12,7 @@ async function StartDeploy(Name, Param1) {
     var ContractTx = await hre.ethers.deployContract(Name, ArrArgs);//signerOrOptions
   
   
-    //await ContractTx.deployed();
+    await ContractTx.deployed();
     console.log(`Deployed ${Name} to ${ContractTx.address}`);
     return ContractTx;
   }

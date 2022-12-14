@@ -8,9 +8,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract UndeadsStaking is Ownable
 {
+    event Stake(address indexed owner, uint256 idSession, uint256 value, uint256 idNFT, uint256 periodDays, uint256 unitRewards);
+    event UnStake(address indexed owner, uint256 idSession, uint256 value, uint256 idNFT, uint256 periodDays);
+    event Reward(address indexed owner, uint256 idSession, uint256 value, uint256 idNFT, uint256 periodDays);
+
+
+
     uint256 constant internal PERCENT100=1e18;
 
-    uint48 public timeStartPeriod;//time stamp
+    uint48 public timeStartContract;//time stamp
+    uint48 public timeEndContract;//time stamp
     uint32 public periodDelta;//delta sec
     uint32 public windowEnd;  //delta sec
 
@@ -42,19 +49,14 @@ contract UndeadsStaking is Ownable
 
     constructor()
     {
-        /*
-        periodDelta=86400;
-        countFirstsPeriods=60;
-        percentFirstsPeriods=uint32(PERCENT100*10/30/100);
-
-        windowEnd=30;
-        */
+        setup(5e25, uint48(block.timestamp), 86400, 30, 1440,60,1333333);
     }
+    
 
 
 
     //_percentFirstsPeriods 100% = 1e9
-    function setup(uint256 _amount, uint48 _startPeriods, uint32 _periodDelta, uint32 _windowEnd, uint32 _countAllPeriods, uint32 _countFirstsPeriods,uint32 _percentFirstsPeriods)  external onlyOwner
+    function setup(uint256 _amount, uint48 _startPeriods, uint32 _periodDelta, uint32 _windowEnd, uint32 _countAllPeriods, uint32 _countFirstsPeriods,uint32 _percentFirstsPeriods)  public onlyOwner
     {
         require(_amount>0,"Error, zero amount");
         require(_startPeriods>0,"Error, zero startPeriods");
@@ -62,7 +64,8 @@ contract UndeadsStaking is Ownable
         require(_countAllPeriods>0,"Error, zero countAllPeriods");
         
         allReward = _amount;
-        timeStartPeriod=_startPeriods;
+        timeStartContract=_startPeriods;
+        timeEndContract=_startPeriods+_periodDelta*_countAllPeriods;
         periodDelta=_periodDelta;
         windowEnd=_windowEnd;
 
@@ -91,6 +94,7 @@ contract UndeadsStaking is Ownable
         }
 
 
+
         uint256 PercentYear;
         if(_periodDay==30)
             PercentYear=1;
@@ -116,34 +120,42 @@ contract UndeadsStaking is Ownable
             revert("Error _periodDay params");
         }
 
+        uint256 EndTimeStake=CurTimePeriod + _periodDay * 86400;
+        require(EndTimeStake<=timeEndContract,"The staking period exceeds the lifetime of the smart contract");
+
         //uint256 amountStake=_amountEffect*PercentYear/100/360;
         uint256 amountStake=_amountEffect*_periodDay*PercentYear/100/360;
 
 
         MapSessionCounter[msg.sender]++;
         uint256 id=MapSessionCounter[msg.sender];
-        SSession storage Stake=MapSession[msg.sender][id];
+        SSession storage Session=MapSession[msg.sender][id];
 
-        Stake.Start = uint48(CurTimePeriod);
-        Stake.End = uint48(CurTimePeriod + _periodDay * 86400);
-        Stake.Body = uint128(_amountBody);
-        Stake.Stake =  uint128(amountStake);
-        Stake.Withdraw = 0;
-        Stake.idNFT = _idNFT;
+        Session.Start = uint48(CurTimePeriod);
+        Session.End = uint48(EndTimeStake);
+        Session.Body = uint128(_amountBody);
+        Session.Stake =  uint128(amountStake);
+        Session.Withdraw = 0;
+        Session.idNFT = _idNFT;
 
-        poolStake+=Stake.Stake;
+        poolStake+=Session.Stake;
+
+        emit Stake(msg.sender, id, Session.Body, _idNFT, _periodDay, Session.Stake);
+
     }
 
 
-    function _unstake(SSession memory , uint32 sessionId) internal
+    function _unstake(SSession memory Session, uint32 sessionId) internal
     {
         /*
-        if(poolStake>Stake.Stake)
-            poolStake -= Stake.Stake;
+        if(poolStake>Session.Stake)
+            poolStake -= Session.Stake;
         else
             poolStake = 0;
             //*/
             
+        emit UnStake(msg.sender, sessionId, Session.Body, Session.idNFT, (Session.End-Session.Start)/86400);
+
         delete MapSession[msg.sender][sessionId];
     }
 
@@ -151,9 +163,9 @@ contract UndeadsStaking is Ownable
 
     function _currentPeriodTime() private view returns(uint256)
     {
-        require(block.timestamp > timeStartPeriod, "Error start staking time");
-        uint256 PeriodNum = (block.timestamp-timeStartPeriod)/periodDelta;
-        uint256 CurTimePeriod=timeStartPeriod+PeriodNum*periodDelta;
+        require(block.timestamp > timeStartContract, "Error start staking time");
+        uint256 PeriodNum = (block.timestamp-timeStartContract)/periodDelta;
+        uint256 CurTimePeriod=timeStartContract+PeriodNum*periodDelta;
         return CurTimePeriod;
     }
 
@@ -161,10 +173,10 @@ contract UndeadsStaking is Ownable
 
     function _currentRewardPool(uint256 time) private view returns(uint256 sumReward)
     {
-        if(time<timeStartPeriod)
+        if(time<timeStartContract)
             return 0;
 
-        uint256 PeriodNum = (time-timeStartPeriod)/periodDelta;
+        uint256 PeriodNum = (time-timeStartContract)/periodDelta;
 
         uint256 Percent;
         if(PeriodNum<countFirstsPeriods)
@@ -192,24 +204,24 @@ contract UndeadsStaking is Ownable
 
 
 
-    function _getReward(SSession memory Stake) internal view returns (uint256 )
+    function _getReward(SSession memory Session) internal view returns (uint256 )
     {
-        if(poolStake!=0 && block.timestamp>Stake.Start + windowEnd)
+        if(poolStake!=0 && block.timestamp>Session.Start + windowEnd)
         {
             uint256 time=block.timestamp;
-            if(time>=Stake.End)
-                time=Stake.End;
+            if(time>=Session.End)
+                time=Session.End;
 
             uint256 Price=1e24*_currentRewardPool(time-1)/poolStake;
 
-            uint256 delta_time=time-Stake.Start;
-            uint256 period=Stake.End-Stake.Start;
+            uint256 delta_time=time-Session.Start;
+            uint256 period=Session.End-Session.Start;
             uint256 percent=PERCENT100*delta_time/period;
             if(percent>PERCENT100)
                 percent=PERCENT100;
             
             
-            return Stake.Stake*Price*percent/PERCENT100/1e24;
+            return Session.Stake*Price*percent/PERCENT100/1e24;
         }
         else
         {

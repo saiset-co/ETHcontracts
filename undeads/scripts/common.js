@@ -7,12 +7,14 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 
 async function deploySmarts() {
+
+
   const [owner, otherAccount] = await hre.ethers.getSigners();
   console.log("Deploying contracts with the account:", owner.address);
-  console.log("Account befor balance:", (await owner.getBalance()).toString());
+  console.log("Account befor balance:", ToFloat(await owner.getBalance()));
 
-  const TokenUDS = await StartDeploy("USDTest");
-  const TokenUGOLD = await StartDeploy("USDTest");
+  const TokenUDS = await StartDeploy("UDSTest");
+  const TokenUGOLD = await StartDeploy("UGOLDTest");
   const NFT = await StartDeploy("NFTTest");
   const AMM = await StartDeploy("AMMTest");
 
@@ -21,7 +23,7 @@ async function deploySmarts() {
 
   
 
-  console.log("Account after balance:", (await owner.getBalance()).toString());
+  console.log("Account after balance:", ToFloat(await owner.getBalance()));
   return { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM};
 }
 
@@ -34,62 +36,30 @@ async function deploySmartTest() {
 
 }
 
-async function Test2(owner, otherAccount, Staking, TokenUGOLD) 
-{
-  await TokenUGOLD.Mint(FromSum18(1e6));
-  await TokenUGOLD.approve(Staking.address,FromSum18(1e6));
 
-  await TokenUGOLD.connect(otherAccount).Mint(FromSum18(1e6));
-  await TokenUGOLD.connect(otherAccount).approve(Staking.address,FromSum18(1e6));
-
-  console.log("TokenUGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
-
-  var Start=(await time.latest())>>>0;
-  console.log("--------------------Start:",Start);
-  Start=Start+10;
-  var Period=24*3600;
-  //var PeriodCount=60;
-  //await (await Staking.setup(FromSum18(3e6), Start, Period,15,PeriodCount,2,1e9/10)).wait();
-  var PeriodCount=1440;
-  await (await Staking.setup(FromSum18(3e6), Start, Period,15,PeriodCount,0,0)).wait();
-
-  await time.increaseTo(Start);
-
-  console.log("--------------------stake");
-  await (await Staking.stake(FromSum18(100), 60)).wait();
-  await (await Staking.connect(otherAccount).stake(FromSum18(100), 60)).wait();
-
-  console.log("allReward: ",ToFloat(await Staking.allReward()),"/",ToFloat(await Staking.poolStake()));
-
-  await time.increaseTo(Start+PeriodCount*Period);
-  //console.log("List: ",ToString(await Staking.listSessions(owner.address,0,10)));
-
-  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
-  console.log("--------------------unstake");
-  await (await Staking.unstake(1)).wait();
-  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
-  console.log("   Wallet:",ToFloat(await Staking.balanceOf(owner.address)));
-
-}
 
 
 
 async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AMM) 
 {
+  console.log("--------------------Mint");
+  await (await TokenUDS.Mint(FromSum18(51e6))).wait();
+  await (await TokenUDS.transfer(Staking.address,FromSum18(50e6))).wait();
+  await (await TokenUGOLD.Mint(FromSum18(50e6))).wait();
+  await (await TokenUGOLD.transfer(AMM.address,FromSum18(50e6))).wait();
+  await (await NFT.Mint(owner.address)).wait();
+  await (await NFT.approve(Staking.address,1)).wait();
+  await (await TokenUDS.approve(Staking.address,FromSum18(1e6))).wait();
 
-  await TokenUDS.Mint(FromSum18(51e6));
-  await TokenUDS.transfer(Staking.address,FromSum18(50e6));
-  await TokenUGOLD.Mint(FromSum18(50e6));
-  await TokenUGOLD.transfer(AMM.address,FromSum18(50e6));
-  await NFT.Mint(owner.address);
-  await NFT.Mint(otherAccount.address);
+  console.log("--------------------");
+  return;
 
-  await TokenUDS.connect(otherAccount).Mint(FromSum18(1e6));  
+  
 
-  await TokenUDS.approve(Staking.address,FromSum18(1e6));
-  await TokenUDS.connect(otherAccount).approve(Staking.address,FromSum18(1e6));
-  await NFT.approve(Staking.address,1);
-  await NFT.connect(otherAccount).approve(Staking.address,2);
+  await (await NFT.Mint(otherAccount.address)).wait();
+  await (await TokenUDS.connect(otherAccount).Mint(FromSum18(1e6))).wait();
+  await (await TokenUDS.connect(otherAccount).approve(Staking.address,FromSum18(1e6))).wait();
+  await (await NFT.connect(otherAccount).approve(Staking.address,2)).wait();
 
   
   console.log("TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
@@ -103,6 +73,7 @@ async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AM
   //await (await Staking.setup(FromSum18(50*1e6), Start, Period,15,PeriodCount,60,(8*1e9/100/60)>>>0)).wait();
   var PeriodCount=1440;
   await (await Staking.setup(FromSum18(50*1e6), Start, Period,15,PeriodCount,60,(8*1e9/100/60)>>>0)).wait();
+  
 
   await time.increaseTo(Start);
 
@@ -157,7 +128,43 @@ async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AM
 }
 
 
+async function Test2(owner, otherAccount, Staking, TokenUGOLD) 
+{
+  await TokenUGOLD.Mint(FromSum18(1e6));
+  await TokenUGOLD.approve(Staking.address,FromSum18(1e6));
 
+  await TokenUGOLD.connect(otherAccount).Mint(FromSum18(1e6));
+  await TokenUGOLD.connect(otherAccount).approve(Staking.address,FromSum18(1e6));
+
+  console.log("TokenUGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
+
+  var Start=(await time.latest())>>>0;
+  console.log("--------------------Start:",Start);
+  Start=Start+10;
+  var Period=24*3600;
+  //var PeriodCount=60;
+  //await (await Staking.setup(FromSum18(3e6), Start, Period,15,PeriodCount,2,1e9/10)).wait();
+  var PeriodCount=1440;
+  await (await Staking.setup(FromSum18(3e6), Start, Period,15,PeriodCount,0,0)).wait();
+
+  await time.increaseTo(Start);
+
+  console.log("--------------------stake");
+  await (await Staking.stake(FromSum18(100), 60)).wait();
+  await (await Staking.connect(otherAccount).stake(FromSum18(100), 60)).wait();
+
+  console.log("allReward: ",ToFloat(await Staking.allReward()),"/",ToFloat(await Staking.poolStake()));
+
+  await time.increaseTo(Start+PeriodCount*Period);
+  //console.log("List: ",ToString(await Staking.listSessions(owner.address,0,10)));
+
+  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
+  console.log("--------------------unstake");
+  await (await Staking.unstake(1)).wait();
+  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
+  console.log("   Wallet:",ToFloat(await Staking.balanceOf(owner.address)));
+
+}
 
 module.exports.deploySmarts = deploySmartTest;
 

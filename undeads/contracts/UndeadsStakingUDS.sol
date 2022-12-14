@@ -29,9 +29,9 @@ contract UndeadsStakingUDS is UndeadsStaking
     using SafeERC20 for IERC20;
  
 
-    IERC20 smartUDS;
-    UndeadNFT smartNFT;
-    IRouter smartAMM;
+    IERC20 public smartUDS;
+    UndeadNFT public smartNFT;
+    IRouter public smartAMM;
     address[] public pathAMM;
 
 
@@ -73,15 +73,15 @@ contract UndeadsStakingUDS is UndeadsStaking
 
     function _reward(uint32 sessionId, bool bSilient)  private
     {
-        SSession storage Stake=MapSession[msg.sender][sessionId];
+        SSession storage Session=MapSession[msg.sender][sessionId];
         
-        require(block.timestamp > Stake.Start + windowEnd, "Error reward time");
+        require(block.timestamp > Session.Start + windowEnd, "Error reward time");
 
 
 
         //calc reward
-        uint256 amount = _getReward(Stake);
-        if(Stake.Withdraw>=amount)
+        uint256 amount = _getReward(Session);
+        if(Session.Withdraw>=amount)
         {
             if(!bSilient)
                 revert("There is nothing to withdraw reward");
@@ -89,8 +89,8 @@ contract UndeadsStakingUDS is UndeadsStaking
         }
 
 
-        uint256 delta = amount-Stake.Withdraw;
-        if(Stake.idNFT>0)
+        uint256 delta = amount-Session.Withdraw;
+        if(Session.idNFT>0)
         {
             //AMM swap
             smartUDS.safeIncreaseAllowance(address(smartAMM),delta);
@@ -102,8 +102,9 @@ contract UndeadsStakingUDS is UndeadsStaking
         }
 
 
+        emit Reward(msg.sender, sessionId, delta, Session.idNFT, (Session.End-Session.Start)/86400);
 
-        Stake.Withdraw += uint128(delta);
+        Session.Withdraw += uint128(delta);
     }
 
     
@@ -111,25 +112,25 @@ contract UndeadsStakingUDS is UndeadsStaking
 
     function unstake(uint32 sessionId)  external
     {
-        SSession memory Stake=MapSession[msg.sender][sessionId];
-        require(Stake.End>0,"Error sessionId");
-        require(block.timestamp > Stake.End, "Error unstaking time");
+        SSession memory Session=MapSession[msg.sender][sessionId];
+        require(Session.End>0,"Error sessionId");
+        require(block.timestamp > Session.End, "Error unstaking time");
 
         //refund reward
         _reward(sessionId,true);
 
-        _unstake(Stake,sessionId);
+        _unstake(Session,sessionId);
 
-        if(Stake.Body>0)
+        if(Session.Body>0)
         {
             //transfer coins staking body to client
-            smartUDS.safeTransfer(msg.sender, Stake.Body);
+            smartUDS.safeTransfer(msg.sender, Session.Body);
         }
 
-        if(Stake.idNFT>0)
+        if(Session.idNFT>0)
         {
             //transfer NFT staking body to client
-            smartNFT.transferFrom(address(this),msg.sender,Stake.idNFT);
+            smartNFT.transferFrom(address(this),msg.sender,Session.idNFT);
         }
 
     }
