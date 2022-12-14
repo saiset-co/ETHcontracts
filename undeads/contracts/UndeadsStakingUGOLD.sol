@@ -30,7 +30,7 @@ contract UndeadsStakingUGOLD is UndeadsStaking
     address saleAddress;
 
 
-    constructor(address addrUDS,address addrUGOLD, address addrAMM, address addrSale)
+    constructor(address addrUDS,address addrUGOLD, address addrSale, address addrAMM)
     {
         smartGOLD=IERC20(addrUGOLD);
         smartAMM=IRouter(addrAMM);
@@ -78,7 +78,7 @@ contract UndeadsStakingUGOLD is UndeadsStaking
 
     function burn(address addr, uint256 amount) public
     {
-        require(msg.sender==saleAddress,"Error sale address");
+        require(msg.sender==saleAddress,"Error saler address");
         require(MapWallet[addr]>=amount,"Error balance");
 
         MapWallet[addr] -= amount;

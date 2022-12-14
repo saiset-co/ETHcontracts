@@ -28,9 +28,9 @@ contract AMMTest
     ) external returns (uint[] memory amounts)
     {
 
+        //1:1
         IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
-
-        IERC20(path[0]).safeTransfer(to, amountIn);
+        IERC20(path[1]).safeTransfer(to, amountIn);
 
 
         amounts=new uint[](1);
