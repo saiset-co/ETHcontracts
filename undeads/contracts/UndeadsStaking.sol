@@ -120,7 +120,7 @@ contract UndeadsStaking is Ownable
             revert("Error _periodDay params");
         }
 
-        uint256 EndTimeStake=CurTimePeriod + _periodDay * 86400;
+        uint256 EndTimeStake=CurTimePeriod + _periodDay * periodDelta;
         require(EndTimeStake<=timeEndContract,"The staking period exceeds the lifetime of the smart contract");
 
         //uint256 amountStake=_amountEffect*PercentYear/100/360;
@@ -154,7 +154,7 @@ contract UndeadsStaking is Ownable
             poolStake = 0;
             //*/
             
-        emit UnStake(msg.sender, sessionId, Session.Body, Session.idNFT, (Session.End-Session.Start)/86400);
+        emit UnStake(msg.sender, sessionId, Session.Body, Session.idNFT, (Session.End-Session.Start)/periodDelta);
 
         delete MapSession[msg.sender][sessionId];
     }
