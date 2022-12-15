@@ -19,7 +19,8 @@ async function deploySmarts() {
   const AMM = await StartDeploy("AMMTest");
 
   const StakingUDS = await StartDeploy("UndeadsStakingUDS",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
-  const StakingUGOLD = await StartDeploy("UndeadsStakingUGOLD",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
+  //const StakingUGOLD = await StartDeploy("UndeadsStakingUGOLD",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
+  const StakingUGOLD=0;
 
   
 
@@ -52,7 +53,7 @@ async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AM
   await (await TokenUDS.approve(Staking.address,FromSum18(1e6))).wait();
 
   console.log("--------------------");
-  return;
+  //return;
 
   
 
