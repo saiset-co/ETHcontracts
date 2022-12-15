@@ -177,6 +177,12 @@ async function Test_1min_unstake()
   var List=await Staking.listSessions(owner.address,0,10);
   console.log("Stakes:  ",ToFloat(List[0].info.Stake),",",ToFloat(List[1].info.Stake));
   console.log("Rewards: ",ToFloat(List[0].reward),",",ToFloat(List[1].reward));
+  var WaitSec=Block.timestamp-List[0].info.End;
+  if(WaitSec<=0)
+  {
+    console.log("For unstake wait ",-WaitSec,"sec");
+    return;
+  }
   
  
   
