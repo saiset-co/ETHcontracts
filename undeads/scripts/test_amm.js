@@ -61,7 +61,7 @@ async function testAMM()
 
   await (await AMM.setFee(TokenUDS.address,3)).wait();
   await (await AMM.setFee(TokenUGOLD.address,5)).wait();
-  /*
+  //*
   console.log("--------------------swap");
   console.log("   UDS  : ",ToFloat(await TokenUDS.balanceOf(owner.address)));
   console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
