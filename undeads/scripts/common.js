@@ -16,7 +16,8 @@ async function deploySmarts() {
   const TokenUDS = await StartDeploy("UDSTest");
   const TokenUGOLD = await StartDeploy("UGOLDTest");
   const NFT = await StartDeploy("NFTTest");
-  const AMM = await StartDeploy("AMMTest");
+  //const AMM = await StartDeploy("AMMTest");
+  const AMM = await StartDeploy("UniswapV2AMM",TokenUDS.address,TokenUGOLD.address);
 
   const StakingUDS = await StartDeploy("UndeadsStakingUDS",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
   //const StakingUGOLD = await StartDeploy("UndeadsStakingUGOLD",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
@@ -38,7 +39,9 @@ async function deploySmarts1() {
   const TokenUDS = await StartDeploy("UDSTest");
   const TokenUGOLD = await StartDeploy("UGOLDTest");
   const NFT = await StartDeploy("NFTTest");
-  const AMM = await StartDeploy("AMMTest");
+  //const AMM = await StartDeploy("AMMTest");
+  const AMM = await StartDeploy("UniswapV2AMM",TokenUDS.address,TokenUGOLD.address);
+
 
   //const StakingUDS = await StartDeploy("UndeadsStakingUDS",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
   var StakingUDS=0;
@@ -236,9 +239,9 @@ async function Test_1min_unstake()
 async function TestMint(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AMM) 
 {
   console.log("--------------------Mint");
-  await (await TokenUDS.Mint(FromSum18(51e6))).wait();
+  await (await TokenUDS.Mint(FromSum18(52e6))).wait();
   await (await TokenUDS.transfer(Staking.address,FromSum18(50e6))).wait();
-  await (await TokenUGOLD.Mint(FromSum18(50e6))).wait();
+  await (await TokenUGOLD.Mint(FromSum18(51e6))).wait();
   await (await TokenUGOLD.transfer(AMM.address,FromSum18(50e6))).wait();
   await (await NFT.Mint(owner.address)).wait();
   await (await NFT.approve(Staking.address,1)).wait();
@@ -265,6 +268,14 @@ async function TestMint2(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT
 async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AMM) 
 {
   
+  await (await TokenUDS.approve(AMM.address,FromSum18(10e6))).wait();
+  await (await TokenUGOLD.approve(AMM.address,FromSum18(10e6))).wait();
+  
+
+  console.log("--------------------addLiquidity");
+  var TimeTo=100+(await time.latest())>>>0;
+  await (await AMM.addLiquidity(TokenUDS.address,TokenUGOLD.address,FromSum18(1e6),FromSum18(1e6),0,0,owner.address,TimeTo)).wait();
+  console.log("LP Token: ",ToFloat(await AMM.balanceOf(owner.address)));
 
   
   console.log("TokenUDS: ",ToFloat(await TokenUDS.balanceOf(owner.address)));
@@ -379,14 +390,24 @@ async function deploySmartGOLD()
   var Staking=StakingUGOLD;
 
   console.log("--------------------Mint");
-  await (await TokenUDS.Mint(FromSum18(51e6))).wait();
+  await (await TokenUDS.Mint(FromSum18(52e6))).wait();
   //await (await TokenUDS.transfer(Staking.address,FromSum18(50e6))).wait();
-  await (await TokenUGOLD.Mint(FromSum18(51e6))).wait();
-  await (await TokenUGOLD.transfer(AMM.address,FromSum18(50e6))).wait();
+  await (await TokenUGOLD.Mint(FromSum18(52e6))).wait();
+  //await (await TokenUGOLD.transfer(AMM.address,FromSum18(50e6))).wait();
   //await (await NFT.Mint(owner.address)).wait();
   //await (await NFT.approve(Staking.address,1)).wait();
   await (await TokenUDS.approve(Staking.address,FromSum18(1e6))).wait();
   await (await TokenUGOLD.approve(Staking.address,FromSum18(1e6))).wait();
+
+
+  await (await TokenUDS.approve(AMM.address,FromSum18(10e6))).wait();
+  await (await TokenUGOLD.approve(AMM.address,FromSum18(10e6))).wait();
+  
+
+  console.log("--------------------addLiquidity");
+  var TimeTo=100+(await time.latest())>>>0;
+  await (await AMM.addLiquidity(TokenUDS.address,TokenUGOLD.address,FromSum18(1e6),FromSum18(1e6),0,0,owner.address,TimeTo)).wait();
+  console.log("LP Token: ",ToFloat(await AMM.balanceOf(owner.address)));
 
   console.log("--------------------Pools");
   await (await Staking.addReward(FromSum18(1e6))).wait();
@@ -435,10 +456,10 @@ async function deploySmartGOLD()
 
 
 
-module.exports.deploySmarts = Test_1min_stake;
-module.exports.deploySmarts = Test_1min_reward;
-module.exports.deploySmarts = Test_1min_unstake;
+//module.exports.deploySmarts = Test_1min_stake;
+//module.exports.deploySmarts = Test_1min_reward;
+//module.exports.deploySmarts = Test_1min_unstake;
 module.exports.deploySmarts = deploySmartTest;
-module.exports.deploySmarts = deploySmartGOLD;
+//module.exports.deploySmarts = deploySmartGOLD;
 
 

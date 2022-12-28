@@ -1,5 +1,5 @@
-//const {deploySmarts}=require("./common.js");
-const {deploySmarts}=require("./test_amm.js");
+const {deploySmarts}=require("./common.js");
+//const {deploySmarts}=require("./test_amm.js");
 
 
 async function main() {

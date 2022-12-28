@@ -94,7 +94,7 @@ contract UndeadsStakingUGOLD is Ownable
         smartGOLD.safeTransferFrom(msg.sender, address(this), _amount);
 
         uint[] memory amounts = smartAMM.getAmountsOut(_amount, pathAMM);
-        uint256 AmountUDS=amounts[0];
+        uint256 AmountUDS=amounts[1];
 
         uint256 amountReward=AmountUDS*6/10*_periodDay/365;
         require(poolReward >= amountReward,"Not enough reward pool");

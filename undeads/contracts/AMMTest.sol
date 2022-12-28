@@ -17,6 +17,7 @@ contract AMMTest
     {
         amounts=new uint[](1);
         amounts[0]=amountIn;
+        amounts[1]=amountIn;
     }
 
     function swapExactTokensForTokens(
