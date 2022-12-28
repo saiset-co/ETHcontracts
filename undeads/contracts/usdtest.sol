@@ -10,7 +10,7 @@ contract UDSTest is ERC20
     }
     function Mint(uint256 amount) external
     {
-         _mint(msg.sender, amount);
+        _mint(msg.sender, amount);
     }
 }
 

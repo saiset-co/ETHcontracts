@@ -83,7 +83,7 @@ contract UndeadsStaking is Ownable
 
     //Lib
 
-    function _stake(uint256 _amountBody,uint256 _amountEffect, uint256 _periodDay, uint256 _idNFT)  internal
+    function _stake(uint256 _amountBody,uint256 _amountEffect, uint256 _periodDay, uint256 _idNFT)  internal virtual
     {
         uint256 CurTimePeriod=_currentPeriodTime();
 
@@ -93,6 +93,8 @@ contract UndeadsStaking is Ownable
             CurTimePeriod += periodDelta;
         }
 
+        uint256 EndTimeStake=CurTimePeriod + _periodDay * periodDelta;
+        require(EndTimeStake<=timeEndContract,"The staking period exceeds the lifetime of the smart contract");
 
 
         uint256 PercentYear;
@@ -119,9 +121,8 @@ contract UndeadsStaking is Ownable
         else {
             revert("Error _periodDay params");
         }
+        
 
-        uint256 EndTimeStake=CurTimePeriod + _periodDay * periodDelta;
-        require(EndTimeStake<=timeEndContract,"The staking period exceeds the lifetime of the smart contract");
 
         //uint256 amountStake=_amountEffect*PercentYear/100/360;
         uint256 amountStake=_amountEffect*_periodDay*PercentYear/100/360;
@@ -145,7 +146,7 @@ contract UndeadsStaking is Ownable
     }
 
 
-    function _unstake(SSession memory Session, uint32 sessionId) internal
+    function _unstake(SSession memory Session, uint32 sessionId) internal 
     {
         /*
         if(poolStake>Session.Stake)
@@ -204,7 +205,7 @@ contract UndeadsStaking is Ownable
 
 
 
-    function _getReward(SSession memory Session) internal view returns (uint256 )
+    function _getReward(SSession memory Session) internal view virtual returns (uint256 ) 
     {
         if(poolStake!=0 && block.timestamp>Session.Start + windowEnd)
         {

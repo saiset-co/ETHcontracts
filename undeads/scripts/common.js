@@ -27,6 +27,30 @@ async function deploySmarts() {
   console.log("Account after balance:", ToFloat(await owner.getBalance()));
   return { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM};
 }
+
+async function deploySmarts1() {
+
+
+  const [owner, otherAccount] = await hre.ethers.getSigners();
+  console.log("Deploying contracts with the account:", owner.address);
+  console.log("Account befor balance:", ToFloat(await owner.getBalance()));
+
+  const TokenUDS = await StartDeploy("UDSTest");
+  const TokenUGOLD = await StartDeploy("UGOLDTest");
+  const NFT = await StartDeploy("NFTTest");
+  const AMM = await StartDeploy("AMMTest");
+
+  //const StakingUDS = await StartDeploy("UndeadsStakingUDS",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address);
+  var StakingUDS=0;
+  const StakingUGOLD = await StartDeploy("UndeadsStakingUGOLD",TokenUDS.address,TokenUGOLD.address,NFT.address,AMM.address,24*3600);
+
+  
+
+  console.log("Account after balance:", ToFloat(await owner.getBalance()));
+  return { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM};
+}
+
+
 async function deploySmarts2() {
 
   const [owner, otherAccount] = await hre.ethers.getSigners();
@@ -347,10 +371,74 @@ async function Test2(owner, otherAccount, Staking, TokenUGOLD)
 
 }
 
-module.exports.deploySmarts = deploySmartTest;
+async function deploySmartGOLD()
+{
+  const { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM} = await deploySmarts1();
+  var Start=(await time.latest())>>>0;
+  console.log("--------------------Start:",Start);
+  var Staking=StakingUGOLD;
+
+  console.log("--------------------Mint");
+  await (await TokenUDS.Mint(FromSum18(51e6))).wait();
+  //await (await TokenUDS.transfer(Staking.address,FromSum18(50e6))).wait();
+  await (await TokenUGOLD.Mint(FromSum18(51e6))).wait();
+  await (await TokenUGOLD.transfer(AMM.address,FromSum18(50e6))).wait();
+  //await (await NFT.Mint(owner.address)).wait();
+  //await (await NFT.approve(Staking.address,1)).wait();
+  await (await TokenUDS.approve(Staking.address,FromSum18(1e6))).wait();
+  await (await TokenUGOLD.approve(Staking.address,FromSum18(1e6))).wait();
+
+  console.log("--------------------Pools");
+  await (await Staking.addReward(FromSum18(1e6))).wait();
+  console.log("poolReward: ",ToFloat(await Staking.poolReward()));
+  await (await Staking.withdrawReward(FromSum18(5e5))).wait();
+  console.log("poolReward: ",ToFloat(await Staking.poolReward()));
+  //await (await Staking.withdrawStake(FromSum18(5e5))).wait();
+  
+  console.log("--------------------Price Rows");
+  await (await Staking.setSubClass(0, FromSum18(10), 10)).wait();
+  await (await Staking.setSubClass(0, FromSum18(11), 20)).wait();
+  await (await Staking.setSubClass(0, FromSum18(12), 30)).wait();
+  await (await Staking.setSubClass(0, FromSum18(14), 40)).wait();
+  await (await Staking.setSubClass(0, FromSum18(15), 50)).wait();
+  console.log("SubClass: ",ToString(await Staking.getSubClass(0, FromSum18(11))));
+
+  console.log("--------------------Stake");
+  var Amount=95;
+  var AmountUDS=Amount;
+  var PeriodStake=90;
+  var amountReward=AmountUDS*6/10*PeriodStake/365;
+  var Price=FromSum18(amountReward);
+
+  console.log("Price:",ToFloat(Price));
+  await (await Staking.stake(FromSum18(Amount),PeriodStake,0, FromSum18(14))).wait();
+  var StakeTime=(await time.latest())>>>0;
+  console.log("poolReward: ",ToFloat(await Staking.poolReward()));
+
+  console.log("--------------------poolStake");
+  console.log("poolStake: ",ToFloat(await Staking.poolStake()));
+  await (await Staking.withdrawStake(FromSum18(14))).wait();
+  console.log("poolStake: ",ToFloat(await Staking.poolStake()));
+
+
+  console.log("--------------------UnStake");
+  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
+  console.log("   NFT: ",ToString(await NFT.ownerOf(1)));
+  var PeriodOneDay=await Staking.PeriodOneDay();
+  await time.increaseTo(StakeTime+PeriodOneDay*PeriodStake);
+  await (await Staking.unstake(1)).wait();
+  console.log("   UGOLD: ",ToFloat(await TokenUGOLD.balanceOf(owner.address)));
+  console.log("   NFT: ",ToString(await NFT.ownerOf(1)));
+  
+
+}
+
+
+
 module.exports.deploySmarts = Test_1min_stake;
 module.exports.deploySmarts = Test_1min_reward;
-
 module.exports.deploySmarts = Test_1min_unstake;
+module.exports.deploySmarts = deploySmartTest;
+module.exports.deploySmarts = deploySmartGOLD;
 
 
