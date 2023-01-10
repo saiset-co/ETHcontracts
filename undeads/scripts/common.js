@@ -96,6 +96,7 @@ async function deploySmarts3() {
 
 
 async function deploySmartTest() {
+  console.log("****************************deploySmartTest");
   const { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM} = await deploySmarts();
 
   await TestMint(owner, otherAccount, StakingUDS, TokenUDS, TokenUGOLD, NFT, AMM);
@@ -267,7 +268,8 @@ async function TestMint2(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT
 
 async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AMM) 
 {
-  
+  console.log("****************************Test1");
+
   await (await TokenUDS.approve(AMM.address,FromSum18(10e6))).wait();
   await (await TokenUGOLD.approve(AMM.address,FromSum18(10e6))).wait();
   
@@ -346,6 +348,8 @@ async function Test1(owner, otherAccount, Staking, TokenUDS, TokenUGOLD, NFT, AM
 
 async function Test2(owner, otherAccount, Staking, TokenUGOLD) 
 {
+  console.log("****************************Test2");
+
   await TokenUGOLD.Mint(FromSum18(1e6));
   await TokenUGOLD.approve(Staking.address,FromSum18(1e6));
 
@@ -382,8 +386,10 @@ async function Test2(owner, otherAccount, Staking, TokenUGOLD)
 
 }
 
-async function deploySmartGOLD()
+async function deploySmartUGOLD()
 {
+  console.log("****************************deploySmartUGOLD");
+
   const { owner, otherAccount, StakingUDS, StakingUGOLD, TokenUDS, TokenUGOLD, NFT, AMM} = await deploySmarts1();
   var Start=(await time.latest())>>>0;
   console.log("--------------------Start:",Start);
@@ -431,6 +437,9 @@ async function deploySmartGOLD()
   var amountReward=AmountUDS*6/10*PeriodStake/365;
   var Price=FromSum18(amountReward);
 
+  
+  await (await Staking.setStakePeriod(1,365*2)).wait();
+
   console.log("Price:",ToFloat(Price));
   await (await Staking.stake(FromSum18(Amount),PeriodStake,0, FromSum18(14))).wait();
   var StakeTime=(await time.latest())>>>0;
@@ -459,7 +468,7 @@ async function deploySmartGOLD()
 //module.exports.deploySmarts = Test_1min_stake;
 //module.exports.deploySmarts = Test_1min_reward;
 //module.exports.deploySmarts = Test_1min_unstake;
-module.exports.deploySmarts = deploySmartTest;
-//module.exports.deploySmarts = deploySmartGOLD;
+//module.exports.deploySmarts = deploySmartTest;
+module.exports.deploySmarts = deploySmartUGOLD;
 
 

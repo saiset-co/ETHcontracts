@@ -65,6 +65,8 @@ contract UndeadsStakingUGOLD is Ownable
     IRouter public smartAMM;
     address[] public pathAMM;
 
+    uint48 public minStakePeriod;
+    uint48 public maxStakePeriod;
 
 
     constructor(address _addrUDS,address _addrUGOLD, address _addrNFT, address _addrAMM, uint256 _periodOneDay)
@@ -78,6 +80,9 @@ contract UndeadsStakingUGOLD is Ownable
 
         require(_periodOneDay>0,"Error, zero periodOneDay");
         PeriodOneDay=_periodOneDay;
+
+        minStakePeriod=30;
+        maxStakePeriod=365;
     }
     
 
@@ -87,7 +92,7 @@ contract UndeadsStakingUGOLD is Ownable
     {
         require(_amount>0,"Error, zero amount");
         require(_periodDay>0,"Error, zero periodDay");
-        require(_periodDay<=3650,"Error, periodDay is too big");
+        require(_periodDay>=minStakePeriod && _periodDay<=maxStakePeriod,"Error periodDay");
 
 
         //transfer coins from client
@@ -143,7 +148,12 @@ contract UndeadsStakingUGOLD is Ownable
     }
 
 
-
+    //admin mode
+    function setStakePeriod(uint48 _min, uint48 _max)  external onlyOwner
+    {
+        minStakePeriod=_min;
+        maxStakePeriod=_max;
+    }
 
 
     function setSubClass(uint256 _class, uint256 _price, uint256 _subClass)  external onlyOwner
