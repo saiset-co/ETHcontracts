@@ -292,17 +292,14 @@ contract UndeadsStakingUGOLD is Ownable
         MapNFTResource[_class][_subClass]=data;
         emit NFTTable(_class, _subClass, data);
     }
-    
-
-
-
-
+ 
     function removeNFTRaw(uint256 _class, uint256 _subClass)  external onlyOwner
     {
         delete MapNFTResource[_class][_subClass];
         emit NFTTableRemove(_class, _subClass);
     }
 
+    //view
     function getNFTRaw(uint256 _class, uint256 _subClass)  external view returns (SNFTResource memory)
     {
         return MapNFTResource[_class][_subClass];
