@@ -292,6 +292,7 @@ contract UndeadsStakingUGOLD is Ownable
         MapNFTResource[_class][_subClass]=data;
         emit NFTTable(_class, _subClass, data);
     }
+    
 
 
 
