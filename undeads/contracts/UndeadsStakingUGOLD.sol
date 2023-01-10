@@ -12,7 +12,7 @@ interface IRouter{
 }
 
 interface UndeadNFT is IERC721 {
-    function craft(address owner_, uint256 subClass) external returns(uint256);
+    //function craft(address owner_, uint256 subClass) external returns(uint256);
 
     function craft(
             address owner_,
@@ -37,10 +37,18 @@ contract UndeadsStakingUGOLD is Ownable
     event Stake(address indexed owner, uint256 idSession, uint256 value, uint256 idNFT, uint256 periodDays, uint256 Reward);
     event UnStake(address indexed owner, uint256 idSession, uint256 value, uint256 idNFT, uint256 periodDays);
   
+    event Price(uint256 class, uint256 price, uint256 subClass);
+    event PriceRemove(uint256 class, uint256 price);
+    
+    event NFTTable(uint256 class, uint256 subClass, SNFTResource data);
+    event NFTTableRemove(uint256 class, uint256 subClass);
+
     
 
 
-    struct SSession{
+
+    struct SSession
+    {
         uint48 Start;    //timestamp
         uint48 End;      //timestamp
         uint128 Body;    //68+60 bits
@@ -51,13 +59,27 @@ contract UndeadsStakingUGOLD is Ownable
     uint256 public poolReward;
     uint256 public poolStake;
 
-    //      user    -> idSession -> {SSession}
+    //        user  -> idSession -> {SSession}
     mapping(address => mapping(uint256 => SSession)) internal MapSession;
     mapping(address => uint256) internal MapSessionCounter;
 
-    //       type -> price  -> id
+    //        class -> price  -> subclass
     mapping(uint256 => mapping(uint256 => uint256)) internal MapPriceNFT;
 
+
+    struct SNFTResource
+    {
+        uint256 location;
+        uint16[10] props;
+        uint8 slots;
+        uint256 count;
+        string image;
+        string dynamic;
+    }
+
+
+    //       class -> subclass  -> {SNFTResource}
+    mapping(uint256 => mapping(uint256 => SNFTResource)) internal MapNFTResource;
 
     UndeadNFT public smartNFT;
     IERC20 public smartUDS;
@@ -106,9 +128,18 @@ contract UndeadsStakingUGOLD is Ownable
 
         uint256 subClass=MapPriceNFT[_class][_price];
         require(subClass>0 && amountReward>=_price,"Error NFT price");
+        subClass--;
         
-        uint256 idNFT=smartNFT.craft(address(this), subClass);
 
+        //uint256 idNFT=smartNFT.craft(address(this), subClass);
+        SNFTResource memory data = MapNFTResource[_class][subClass];
+        uint256 idNFT=smartNFT.craft(address(this), _class, subClass,
+                                    data.location,
+                                    data.props,
+                                    data.slots,
+                                    data.count,
+                                    data.image,
+                                    data.dynamic);
 
 
         MapSessionCounter[msg.sender]++;
@@ -156,20 +187,35 @@ contract UndeadsStakingUGOLD is Ownable
     }
 
 
-    function setSubClass(uint256 _class, uint256 _price, uint256 _subClass)  external onlyOwner
+    function setPrice(uint256 _class, uint256 _price, uint256 _subClass)  external onlyOwner
     {
         require(_price>0,"Error, zero price");
-        require(_subClass>0,"Error, zero subClass");
+        MapPriceNFT[_class][_price]= 1 + _subClass;
 
-        MapPriceNFT[_class][_price]=_subClass;
+        emit Price(_class, _price, _subClass);
     }
+
+
+
+
+    function removePrice(uint256 _class, uint256 _price)  external onlyOwner
+    {
+        delete MapPriceNFT[_class][_price];
+        emit PriceRemove(_class, _price);
+    }
+
+
+
 
     
 
-    function getSubClass(uint256 _class, uint256 _price) external view returns(uint256)
+    function getSubClass(uint256 _class, uint256 _price) external view returns(int256)
     {
-        return MapPriceNFT[_class][_price];
+        int256 subClass = int256(MapPriceNFT[_class][_price]);
+        return subClass - 1;
     }
+
+
 
 
 
@@ -234,6 +280,33 @@ contract UndeadsStakingUGOLD is Ownable
             }
         }
     }
+
+
+
+
+
+
+    //NFT Resource Table
+    function setNFTRaw(uint256 _class, uint256 _subClass, SNFTResource memory data)  external onlyOwner
+    {
+        MapNFTResource[_class][_subClass]=data;
+        emit NFTTable(_class, _subClass, data);
+    }
+
+
+
+
+    function removeNFTRaw(uint256 _class, uint256 _subClass)  external onlyOwner
+    {
+        delete MapNFTResource[_class][_subClass];
+        emit NFTTableRemove(_class, _subClass);
+    }
+
+    function getNFTRaw(uint256 _class, uint256 _subClass)  external view returns (SNFTResource memory)
+    {
+        return MapNFTResource[_class][_subClass];
+    }
+    
 
 }
 

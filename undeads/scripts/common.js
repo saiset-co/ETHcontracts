@@ -423,12 +423,21 @@ async function deploySmartUGOLD()
   //await (await Staking.withdrawStake(FromSum18(5e5))).wait();
   
   console.log("--------------------Price Rows");
-  await (await Staking.setSubClass(0, FromSum18(10), 10)).wait();
-  await (await Staking.setSubClass(0, FromSum18(11), 20)).wait();
-  await (await Staking.setSubClass(0, FromSum18(12), 30)).wait();
-  await (await Staking.setSubClass(0, FromSum18(14), 40)).wait();
-  await (await Staking.setSubClass(0, FromSum18(15), 50)).wait();
-  console.log("SubClass: ",ToString(await Staking.getSubClass(0, FromSum18(11))));
+  await (await Staking.setPrice(0, FromSum18(5), 0)).wait();
+  await (await Staking.setPrice(0, FromSum18(10), 10)).wait();
+  await (await Staking.setPrice(0, FromSum18(11), 20)).wait();
+  await (await Staking.setPrice(0, FromSum18(12), 30)).wait();
+  await (await Staking.setPrice(0, FromSum18(14), 40)).wait();
+  await (await Staking.setPrice(0, FromSum18(15), 50)).wait();
+  await (await Staking.removePrice(0, FromSum18(5))).wait();
+  console.log("SubClass: ",ToString(await Staking.getSubClass(0, FromSum18(14))));
+
+
+  await (await Staking.setNFTRaw(0, 40, {location:0,props:[0,0,0,0,0,0,0,0,0,9999],slots:0,count:0,image:"picture.gif",dynamic:""})).wait();
+  //await (await Staking.removeNFTRaw(0, 40)).wait();
+  console.log("getNFTRaw: ",ToString(await Staking.getNFTRaw(0, 40)));
+
+
 
   console.log("--------------------Stake");
   var Amount=95;

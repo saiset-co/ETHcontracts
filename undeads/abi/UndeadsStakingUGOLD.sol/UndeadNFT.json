@@ -124,30 +124,6 @@
         },
         {
           "internalType": "uint256",
-          "name": "subClass",
-          "type": "uint256"
-        }
-      ],
-      "name": "craft",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "owner_",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
           "name": "class_",
           "type": "uint256"
         },
