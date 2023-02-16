@@ -23,6 +23,7 @@ contract MetableVesting is Ownable {
         uint48 First;//100000 = 100%
     }
 
+    ///@dev Storage info about coins for which user can buy tokens
     mapping(address => uint256) private MapCoin;
 
     uint48 constant PERCENT_100=100000;//100%
@@ -37,7 +38,7 @@ contract MetableVesting is Ownable {
     constructor() {}
 
     /**
-    * @dev Setting a list of coins for which you can buy tokens
+    * @dev Setting a list of coins for which user can buy tokens
     * 
      * @param addressCoin The coin address for which the token is bought
      * @param rate The exchange rate to one dollar

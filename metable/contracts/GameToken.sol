@@ -5,9 +5,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./SmartOnly.sol";
 
 contract GameToken is ERC20, SmartOnly {
+
+    ///@dev Total volume of tokens for sale
     uint256 public SaleAmount;
+    ///@dev The price of one token in ETH
     uint256 public SalePrice;
 
+    ///@dev Storage info about coins for which user can buy tokens
     mapping(address => uint256) private MapToken;
 
     constructor() ERC20("Metable token", "MTB") {}

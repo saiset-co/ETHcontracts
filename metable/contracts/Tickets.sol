@@ -25,6 +25,8 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
     INFTToken smartMetable;
     INFTToken smartCourse;
     ISmartToken public smartToken;
+    
+    ///@dev Storage info about issue course tickets
     mapping(uint256 => uint256) internal mapAmount;
     mapping(uint256 => uint256) internal mapPrice;
 

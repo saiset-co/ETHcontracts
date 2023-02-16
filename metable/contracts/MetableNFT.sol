@@ -25,7 +25,7 @@ interface ISmartToken {
 contract MetableNFT is PrimaryNFT {
 
     
-    ///@dev Storing main token data
+    ///@dev Storing main data for NFT
     struct SItem {
         uint48 ParentLink;
         uint16 MaxRents;

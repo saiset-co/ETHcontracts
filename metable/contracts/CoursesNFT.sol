@@ -6,6 +6,7 @@ import "./PrimaryNFT.sol";
 //import "./MetableNFT.sol";
 
 contract CoursesNFT is PrimaryNFT, SmartOnly {
+    ///@dev Storage info about NFT metadata
     mapping(uint256 => string) internal mapMetadata;
 
     //MetableNFT smartNFT;
