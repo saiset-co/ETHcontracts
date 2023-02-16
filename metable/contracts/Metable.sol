@@ -9,6 +9,19 @@ contract Metable is MetableRentAsk {
         MetableRentAsk(addrToken, addrCourse)
     {}
 
+     /**
+     * @dev Mint new token to this smart addres
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param Type The type of token
+     * @param SubType The subtype of token
+     * @param Metadata The metadata of token
+     * @param MaxSlots The max childs NFT
+     * @param MaxRents The max rent count
+     * @param price The price for sale
+     * @param count The count NFT for sale
+     */
     function Mint(
         string memory Type,
         string memory SubType,
@@ -41,8 +54,9 @@ contract Metable is MetableRentAsk {
         }
     }
 
-
-
+     /**
+     * @dev Determines whether the rows are the same. Internal use only
+     */
     function isEqString(string memory a, string memory b)
         internal
         pure
@@ -53,10 +67,22 @@ contract Metable is MetableRentAsk {
 
     //withdraw
 
+    /**
+     * @dev Transfer utility tokens from smart contract to address
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param to The recipient's address
+     * @param amount The amount of token
+     */
     function transferToken(address to, uint256 amount) external onlyOwner {
         smartToken.SmartTransferTo(address(this), to, amount);
     }
 
+    /**
+    * @dev Withdraw the entire balance of utility tokens on a smart contract
+    * 
+    */
     function withdrawToken() external onlyOwner {
         smartToken.SmartTransferTo(
             address(this),

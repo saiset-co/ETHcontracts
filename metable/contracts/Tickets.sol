@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./SmartOnly.sol";
 
+///@dev A token interface that can be managed by a smart contract
 interface ISmartToken {
     function SmartTransferTo(
         address from,
@@ -13,6 +14,7 @@ interface ISmartToken {
     ) external returns (bool);
 }
 
+///@dev Short version of the NFT standard interface
 interface INFTToken {
 
     function ownerOf(uint256 tokenId) external returns (address);
@@ -32,6 +34,13 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
         smartCourse = INFTToken(addrCourse);
     }
 
+    /**
+     * @dev Request to issue course tickets
+     * 
+     * @param courseId The course ID
+     * @param amount The number of tickets
+     * @param price The price
+     */
     function issueTickets(
         uint256 courseId,
         uint256 amount,
@@ -48,6 +57,12 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
     }
 
     
+    /**
+     * @dev Confirmation of the request from the school owner
+     * 
+     * @param schoolId The school ID
+     * @param courseId The course ID
+     */
     function approveTickets(uint256 schoolId, uint256 courseId) public {
         uint256 amount = mapAmount[courseId];
         require(amount > 0, "approveTickets::Error amount issue");
@@ -58,6 +73,14 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
         mapAmount[courseId] = 0;
     }
 
+     /**
+     * @dev Token transfer, called from other smart contracts
+     * 
+     * @param from The sender's address
+     * @param to The recipient's address
+     * @param tokenId The id of token
+     * @param amount The amount of token
+     */
     function SmartTransferTo(
         address from,
         address to,
@@ -96,14 +119,21 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
     }
 
     //Standart
+
+    /**
+     * @dev See {IERC1155Receiver}
+     */
     function onERC1155Received(address, address, uint256, uint256, bytes memory) virtual public pure returns (bytes4) {
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
+    /**
+     * @dev See {IERC1155Receiver}
+     */
     function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory, bytes memory) public pure returns (bytes4) {
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
-    //View
+
  
 }

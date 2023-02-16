@@ -12,6 +12,7 @@ abstract contract SmartOnly is Ownable {
         _;
     }
 
+    ///@dev Setting the address of the smart contract that manages balances
     function setSmart(address addr) public onlyOwner {
         mapAllow[addr] = true;
     }

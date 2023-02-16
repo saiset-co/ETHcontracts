@@ -27,7 +27,7 @@ contract MetableVesting is Ownable {
 
     uint48 constant PERCENT_100=100000;//100%
 
-
+    ///@dev Storage info about token sale and vesting
     mapping(bytes32 => SSale) private MapSale;
     mapping(bytes32 => SVesting) private MapVesting;
     mapping(bytes32 => uint256) private MapPurchase;
@@ -36,10 +36,17 @@ contract MetableVesting is Ownable {
 
     constructor() {}
 
+    /**
+    * @dev Setting a list of coins for which you can buy tokens
+    * 
+     * @param addressCoin The coin address for which the token is bought
+     * @param rate The exchange rate to one dollar
+    */
     function setCoin(address addressCoin, uint256 rate) external onlyOwner {
         MapCoin[addressCoin] = rate; // Rate for 1 USD
     }
 
+    ///@dev Sale key
     function _getKey(address addr, uint48 time)
         internal
         pure
@@ -48,6 +55,7 @@ contract MetableVesting is Ownable {
         key = keccak256(abi.encodePacked(addr, time));
     }
 
+    ///@dev The user's wallet balance key
     function _getKeyBalance(
         address addr,
         address addrSale,
@@ -56,6 +64,19 @@ contract MetableVesting is Ownable {
         key = keccak256(abi.encodePacked(addr, addrSale, time));
     }
 
+    /**
+    * @dev Setting token sale parameters
+    * 
+     * @param addressTokenSale The token of sale
+     * @param amount The number of tokens
+     * @param price The price for one token
+     * @param timeStart The start sale date
+     * @param timeExpires The end sale date
+     * @param timeCliff The end of cliff time
+     * @param vestingPeriodCounts The number of vesting periods
+     * @param vestingPeriod The number of seconds of one vesting period
+     * @param vestingFirst The percentage of vesting of the first period
+    */
     function setSale(
         address addressTokenSale,
         uint104 amount,
@@ -77,6 +98,14 @@ contract MetableVesting is Ownable {
         MapVesting[key] = SVesting(timeCliff,vestingPeriodCounts,vestingPeriod,vestingFirst);
     }
 
+    /**
+    * @dev Purchase of tokens
+    * 
+     * @param addressTokenSale The token of sale
+     * @param timeStart The start sale date
+     * @param addressCoin The coin address for which the token is bought
+     * @param amount The number of tokens
+    */
     function buyToken(
         address addressTokenSale,
         uint48 timeStart,
@@ -117,6 +146,13 @@ contract MetableVesting is Ownable {
     }
 
     //withdraw by client
+
+    /**
+    * @dev Withdraw tokens by the user
+    * 
+     * @param addressTokenSale The token of sale
+     * @param timeStart The start date
+    */
     function withdraw(address addressTokenSale, uint48 timeStart) external {
         bytes32 key = _getKey(addressTokenSale, timeStart);
         SVesting memory info = MapVesting[key];
@@ -154,6 +190,12 @@ contract MetableVesting is Ownable {
 
 
     //withdraw by owner
+
+    /**
+    * @dev Withdraw the entire balance of coins on a smart contract (coins for which tokens were bought)
+    * 
+    * @param addressSmart The address of the smart contract in which the price is estimated
+    */
     function withdrawCoins(address addressSmart) external onlyOwner {
         IERC20 smartCoin = IERC20(addressSmart);
 
@@ -161,11 +203,22 @@ contract MetableVesting is Ownable {
         smartCoin.safeTransfer(msg.sender, amount);
     }
 
+    /**
+    * @dev Withdraw the entire ETH balance on a smart contract
+    */
     function withdrawEth() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 
     //View
+
+    /**
+     * @dev Retrieves the number of tokens that are purchased by the user but are in the wallet on the smart contract
+     * 
+     * @param addressTokenSale The token of sale
+     * @param timeStart The start date
+     * @return The balance
+     */
     function balanceOf(address addressTokenSale, uint48 timeStart)
         public
         view
@@ -180,6 +233,14 @@ contract MetableVesting is Ownable {
     }
 
 
+
+    /**
+     * @dev Retrieves information about the token sale
+     * 
+     * @param addressTokenSale The token of sale
+     * @param timeStart The start date
+     * @return The info {SSale},{SVesting}
+     */
     function getSale(address addressTokenSale, uint48 timeStart)
         public
         view

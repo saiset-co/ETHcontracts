@@ -6,6 +6,7 @@ import "./MetableSale.sol";
 contract MetableRent is MetableSale {
     INFTToken public smartCourse;
 
+    ///@dev Storing rent info of token
     struct SRentItem {
         uint16 MaxRents;
         address[] users;
@@ -19,6 +20,14 @@ contract MetableRent is MetableSale {
     }
 
 
+    /**
+     * @dev Placing an order for the rent of a token (internal use)
+     * 
+     * @param tokenId The child token
+     * @param index The rent slot index
+     * @param user The NFT owner addres
+     * @param expires The rent end date (sec)
+     */
     function _setRent(
         uint256 tokenId,
         uint256 index,
@@ -46,6 +55,13 @@ contract MetableRent is MetableSale {
     }
 
     //View
+
+    /**
+     * @dev Retrieves info of token rent
+     * 
+     * @param tokenId The token id
+     * @return info The rent info {SRentItem}
+     */
     function rentToken(uint256 tokenId)
         public
         view
@@ -54,6 +70,13 @@ contract MetableRent is MetableSale {
         info = MapRents[tokenId];
     }
 
+    /**
+     * @dev Retrieves renter of token
+     * 
+     * @param tokenId The token id
+     * @param index The rent slot index
+     * @return The renter address
+     */
     function rentUser(uint256 tokenId, uint256 index)
         public
         view
@@ -68,7 +91,14 @@ contract MetableRent is MetableSale {
         }
     }
 
-    function rentExpires(uint256 tokenId, uint256 index)
+    /**
+     * @dev Retrieves the end date of the lease
+     * 
+     * @param tokenId The token id
+     * @param index The rent slot index
+     * @return The lease date
+     */
+     function rentExpires(uint256 tokenId, uint256 index)
         public
         view
         virtual

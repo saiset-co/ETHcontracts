@@ -8,6 +8,7 @@ import "./MetableNFT.sol";
 contract MetableSale is MetableNFT {
     ISmartToken public smartToken;
 
+    ///@dev Storing info about sale market
     using EnumerableMap for EnumerableMap.UintToUintMap;
     EnumerableMap.UintToUintMap private EnumSalePrice;
     mapping(uint256 => address) private MapSaleOwner;
@@ -22,6 +23,14 @@ contract MetableSale is MetableNFT {
         smartToken = ISmartToken(addrToken);
     }
 
+    /**
+     * @dev Placement of a sale request
+     * (internal use)
+     * 
+     * @param tokenId The token ID
+     * @param price The rent price
+     * @param addr The owner address
+     */
     function _setSale(
         uint256 tokenId,
         uint256 price,
@@ -31,11 +40,24 @@ contract MetableSale is MetableNFT {
         MapSaleOwner[tokenId] = addr;
     }
 
+
+    /**
+     * @dev Remove sale order
+     * (internal use)
+     * 
+     * @param tokenId The token ID
+     */
     function _removeSale(uint256 tokenId) internal {
         require(EnumSalePrice.remove(tokenId), "_setSale::Error remove NFT from list");
         MapSaleOwner[tokenId] = address(0);
     }
 
+    /**
+     * @dev Placement of a sale request
+     * 
+     * @param tokenId The token ID
+     * @param price The rent price
+     */
     function setSale(uint256 tokenId, uint256 price) external {
         require(price > 0, "setSale::Price is zero");
 
@@ -46,6 +68,11 @@ contract MetableSale is MetableNFT {
         _setSale(tokenId, price, msg.sender);
     }
 
+    /**
+     * @dev Remove sale order
+     * 
+     * @param tokenId The token ID
+     */
     function removeSale(uint256 tokenId) external {
         require(MapSaleOwner[tokenId] == msg.sender, "removeSale::Sender not NFT owner");
 
@@ -56,6 +83,11 @@ contract MetableSale is MetableNFT {
         _removeSale(tokenId);
     }
 
+    /**
+     * @dev Execution of an order (purchase of NFT)
+     * 
+     * @param tokenId The token ID
+     */
     function buyNFT(uint256 tokenId) external {
         uint256 Price = EnumSalePrice.get(tokenId);
         require(Price > 0, "buyNFT::Error NFT ID");
@@ -79,10 +111,22 @@ contract MetableSale is MetableNFT {
 
     //View
 
+    /**
+     * @dev Retrieves number of sale orders
+     * 
+     * @return The number of items
+     */
     function lengthSale() public view returns (uint256) {
         return EnumSalePrice.length();
     }
 
+    /**
+     * @dev Retrieves list of sale orders
+     * 
+     * @param startIndex The start list index
+     * @param counts The number of items
+     * @return Arr The array of items {SInfoSale}
+     */
     function listSale(uint256 startIndex, uint256 counts)
         public
         view

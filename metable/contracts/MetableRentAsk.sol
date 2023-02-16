@@ -7,6 +7,7 @@ import "./MetableRentBid.sol";
 
 contract MetableRentAsk is  MetableRentBid {
 
+    ///@dev Storing info about market rents (ask)
     struct SMarketRentAsk {
         uint48 ID;
         uint48 Period;
@@ -32,7 +33,13 @@ contract MetableRentAsk is  MetableRentBid {
 
     //Ask market
 
-
+    /**
+     * @dev Placing a rental request (demand from users)
+     * 
+     * @param tokenId The token ID
+     * @param price The rent price
+     * @param period The rent period (sec)
+     */
     function setRentAsk(
         uint256 tokenId,
         uint256 price,
@@ -52,6 +59,11 @@ contract MetableRentAsk is  MetableRentBid {
         MarketRentAsk[key] = SMarketRentAsk(uint48(tokenId),uint48(period), msg.sender, price);
     }
 
+    /**
+     * @dev Remove ask order
+     * 
+     * @param tokenId The token ID
+     */
     function removeRentAsk(uint256 tokenId) external {
         bytes32 key=keccak256(abi.encodePacked(msg.sender,tokenId));
         require(
@@ -61,6 +73,12 @@ contract MetableRentAsk is  MetableRentBid {
         delete MarketRentAsk[key];
     }
 
+    /**
+     * @dev Rental confirmation
+     * 
+     * @param key The order key
+     * @param index The rent slot index
+     */
     function approveRentAsk(bytes32 key, uint256 index) external {
 
         SMarketRentAsk memory data = MarketRentAsk[key];
@@ -96,10 +114,22 @@ contract MetableRentAsk is  MetableRentBid {
 
     //View
 
+    /**
+     * @dev Retrieves number of rent ask orders
+     * 
+     * @return The number of items
+     */
     function lengthRentAsk() public view returns (uint256) {
         return EnumRentAsk.length();
     }
 
+    /**
+     * @dev Retrieves list of rent ask orders
+     * 
+     * @param startIndex The start list index
+     * @param counts The number of items
+     * @return Arr The array of items {SInfoRentAsk}
+     */
     function listRentAsk(uint256 startIndex, uint256 counts)
         public
         view

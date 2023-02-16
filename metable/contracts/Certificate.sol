@@ -650,26 +650,47 @@ abstract contract PrimaryNFT is ERC721, Ownable {
         _;
     }
 
+    /**
+     * @dev Mint new NFT
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param to The target address that will receive the tokens
+     * @return tokenId The  uint256 ID of the token
+     */
     function _NewToken(address to) internal returns (uint256 tokenId) {
         tokenId = _tokenIdCounter;
         _tokenIdCounter++;
         _mint(to, tokenId);
     }
 
+    /**
+     * Token ID counter in order
+     */
     function _NewID() internal returns (uint256 tokenId) {
         tokenId = _tokenIdCounter;
         _tokenIdCounter++;
     }
 
     //Standart NFT work
+
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
     function setBaseURI(string calldata baseURI) external onlyOwner {
         _BaseURI = baseURI;
     }
 
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
     function baseTokenURI() public view returns (string memory) {
         return _BaseURI;
     }
 
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
     function _baseURI() internal view override returns (string memory) {
         return _BaseURI;
     }
@@ -680,12 +701,31 @@ contract Certificate is PrimaryNFT {
 
     constructor() PrimaryNFT("Metable Certificate", "CRT") {}
 
+    /**
+     * @dev Mint NFT of the completed course
+     *      courseId must be in 0-2^48 range
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param to The target address that will receive the tokens
+     * @param courseId The uint256 ID of the course token
+     */
     function Mint(address to, uint256 courseId) external onlyOwner {
 
         uint256 tokenId = (_NewID() << 48) + courseId;
         _mint(to, tokenId);
     }
 
+    /**
+     * @dev Destroys `tokenId`.
+     * The approval is cleared when the token is burned.
+     *
+     * Requirements:
+     *
+     * - `tokenId` must exist.
+     *
+     * Emits a {Transfer} event.
+     */
     function Burn(uint256 tokenId) external onlyOwner {
         _burn(tokenId);
     }

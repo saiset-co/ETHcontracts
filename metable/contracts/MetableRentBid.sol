@@ -8,6 +8,7 @@ import "./MetableRent.sol";
 
 contract MetableRentBid is MetableRent {
 
+    ///@dev Storing info about market rents (bid)
     struct SMarketRentBid {
         uint48 Period;
         address Owner;
@@ -32,6 +33,15 @@ contract MetableRentBid is MetableRent {
 
     //Bid market
 
+    /**
+     * @dev Placement of a rental request (offer from the owners)
+     * (internal use)
+     * 
+     * @param tokenId The token ID
+     * @param price The rent price
+     * @param period The rent period
+     * @param count The number of rental slots
+     */
     function _setRentBid(
         uint256 tokenId,
         uint256 price,
@@ -42,6 +52,12 @@ contract MetableRentBid is MetableRent {
         MarketRentBid[tokenId] = SMarketRentBid(uint48(period), msg.sender, price);
     }
 
+    /**
+     * @dev Remove bid order
+     * (internal use)
+     * 
+     * @param tokenId The token ID
+     */
     function _removeRentBid(uint256 tokenId) internal {
         require(
             EnumRentBid.remove(tokenId),
@@ -50,6 +66,14 @@ contract MetableRentBid is MetableRent {
         delete MarketRentBid[tokenId];
     }
 
+    /**
+     * @dev Placement of a rental request (offer from the owners)
+     * 
+     * @param tokenId The token ID
+     * @param price The rent price
+     * @param period The rent period
+     * @param count The number of rental slots
+     */
     function setRentBid(
         uint256 tokenId,
         uint256 price,
@@ -66,6 +90,11 @@ contract MetableRentBid is MetableRent {
         _setRentBid(tokenId, price, period,count);
     }
 
+    /**
+     * @dev Remove bid order
+     * 
+     * @param tokenId The token ID
+     */
     function removeRentBid(uint256 tokenId) external onlyNFTOwner(tokenId) {
         SMarketRentBid memory data = MarketRentBid[tokenId];
         require(
@@ -77,6 +106,14 @@ contract MetableRentBid is MetableRent {
         _removeRentBid(tokenId);
     }
 
+    /**
+     * @dev Execution of an order (taking a token for rent)
+     * (internal use)
+     * 
+     * @param tokenId The token ID
+     * @param index The rent slot index
+     * @param courseId The ID of course (only for school subtype NFT )
+     */
     function _buyRentBid(
         uint256 tokenId,
         uint256 index,
@@ -115,10 +152,23 @@ contract MetableRentBid is MetableRent {
             EnumRentBid.set(tokenId, count);
     }
 
+     /**
+     * @dev Execution of an order (taking a token for rent)
+     * 
+     * @param tokenId The token ID
+     * @param index The rent slot index
+     */
     function buyRentBid(uint256 tokenId, uint256 index) external {
         _buyRentBid(tokenId, index, 0);
     }
 
+     /**
+     * @dev Execution of an order (taking a school subtype token for rent)
+     * 
+     * @param tokenId The token ID
+     * @param courseId The ID of course
+     * @param index The rent slot index
+     */
     function buyRentSchoolBid(
         uint256 tokenId,
         uint256 courseId,
@@ -136,10 +186,22 @@ contract MetableRentBid is MetableRent {
 
     //View
 
+    /**
+     * @dev Retrieves number of rent bid orders
+     * 
+     * @return The number of items
+     */
     function lengthRentBid() public view returns (uint256) {
         return EnumRentBid.length();
     }
 
+    /**
+     * @dev Retrieves list of rent bid orders
+     * 
+     * @param startIndex The start list index
+     * @param counts The number of items
+     * @return Arr The array of items {SInfoRentBid}
+     */
     function listRentBid(uint256 startIndex, uint256 counts)
         public
         view

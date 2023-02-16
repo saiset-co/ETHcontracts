@@ -13,6 +13,13 @@ contract GameToken is ERC20, SmartOnly {
     constructor() ERC20("Metable token", "MTB") {}
 
 
+     /**
+     * @dev Token transfer, called from other smart contracts
+     * 
+     * @param from The sender's address
+     * @param to The recipient's address
+     * @param amount The amount of token
+     */
     function SmartTransferTo(address from, address to, uint256 amount)
         external onlySmart
         returns (bool)
@@ -22,23 +29,57 @@ contract GameToken is ERC20, SmartOnly {
         return true;
     }
 
+    /**
+     * @dev Mint tokens to this smart addres
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param amount The amount of token
+     */
     function Mint(uint256 amount) external onlyOwner {
         _mint(address(this), amount);
     }
 
+    /**
+     * @dev Mint tokens to address
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param to The recipient's address
+     * @param amount The amount of token
+     */
     function MintTo(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
 
+     /**
+     * @dev Transfer tokens from smart contract to address
+     * 
+     * Emits a {Transfer} event.
+     * 
+     * @param to The recipient's address
+     * @param amount The amount of token
+     */
     function transferToken(address to, uint256 amount) external onlyOwner {
         _transfer(address(this),to, amount);
     }
 
+     /**
+     * @dev Setting the common volume of token sales and set ETH prices
+     * 
+     * @param amount The amount of token
+     * @param price The price for one token
+     */
     function setSale(uint256 amount, uint256 price) external onlyOwner {
         SaleAmount = amount;
         SalePrice = price;
     }
+    
 
+     /**
+     * @dev Buying tokens for ETH
+     * The number of tokens that the user wants to buy is calculated automatically based on the ETH sent
+     */
     function buyToken() external payable {
         require(SalePrice > 0, "Sale Price is zero");
 
@@ -59,10 +100,23 @@ contract GameToken is ERC20, SmartOnly {
     }
 
     //token buy
+
+     /**
+     * @dev Setting the price of other coins
+     * 
+     * @param addressSmart The address of the smart contract in which the price is estimated
+     * @param price The price for one token
+     */
     function setSmartSale(address addressSmart, uint256 price) external onlyOwner {
         MapToken[addressSmart]=price;
     }
 
+     /**
+     * @dev Buying tokens for coins
+     * 
+     * @param addressSmart The address of the smart contract in which the price is estimated
+     * @param amount The number of tokens that the user wants to buy
+     */
     function buyToken2(address addressSmart,uint256 amount) external {
         require(amount > 0, "Amount is zero");
         //require(SalePrice > 0, "Sale Price is zero");
@@ -92,10 +146,19 @@ contract GameToken is ERC20, SmartOnly {
 
     //withdraw
 
+    /**
+    * @dev Withdraw the entire ETH balance on a smart contract
+    */
     function withdraw() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
 
+
+    /**
+    * @dev Withdraw the entire balance of coins on a smart contract
+    * 
+     * @param addressSmart The address of the smart contract in which the price is estimated
+    */
     function withdrawToken(address addressSmart) external onlyOwner
     {
         ERC20 smartToken=ERC20(addressSmart);
