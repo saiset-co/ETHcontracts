@@ -29,10 +29,14 @@ contract MetableVesting is Ownable {
     uint48 constant PERCENT_100=100000;//100%
 
     ///@dev Storage info about token sale and vesting
-    mapping(bytes32 => SSale) private MapSale;
-    mapping(bytes32 => SVesting) private MapVesting;
-    mapping(bytes32 => uint256) private MapPurchase;
-    mapping(bytes32 => uint256) private MapWithdraw;
+
+    //Maps with key = keccak256keccak256(addressTokenSale,timeStart);
+    mapping(bytes32 => SSale) private MapSale;          //token sales
+    mapping(bytes32 => SVesting) private MapVesting;    //vesting params
+
+    //Maps with key = keccak256(msg.sender, addressTokenSale,timeStart);
+    mapping(bytes32 => uint256) private MapPurchase;    //the number of all tokens purchased
+    mapping(bytes32 => uint256) private MapWithdraw;    //the number of all tokens withdrawn
     
 
     constructor() {}
