@@ -96,6 +96,8 @@ contract MetableVesting is Ownable {
     ) external onlyOwner {
         require(price>0,"Error, zero price");
         require(vestingPeriodCounts>=2,"The minimum value of the vesting Period counts should be 2");
+        require(timeStart<=timeExpires,"Error timeExpires");
+        require(timeExpires<=timeCliff,"Error timeCliff");
         
 
         bytes32 key = _getKey(addressTokenSale, timeStart);
