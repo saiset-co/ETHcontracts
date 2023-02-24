@@ -49,7 +49,7 @@ contract Tickets is ERC1155, Ownable, SmartOnly {
         uint256 price
     ) public {
         require(amount > 0, "issueTickets::Error amount issue");
-        require(amount > 0, "issueTickets::Error zero price");
+        require(price > 0, "issueTickets::Error zero price");
         require(
             smartCourse.ownerOf(courseId) == msg.sender,
             "issueTickets::Error Course owner"
