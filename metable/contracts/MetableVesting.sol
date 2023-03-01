@@ -96,9 +96,10 @@ contract MetableVesting is Ownable {
     ) external onlyOwner {
         require(price>0,"Error, zero price");
         require(vestingPeriodCounts>=2,"The minimum value of the vesting Period counts should be 2");
+        require(block.timestamp <= timeStart,"Error timeStart");
         require(timeStart<=timeExpires,"Error timeExpires");
         require(timeExpires<=timeCliff,"Error timeCliff");
-        
+      
 
         bytes32 key = _getKey(addressTokenSale, timeStart);
         MapSale[key] = SSale(timeExpires, amount, price);
@@ -127,6 +128,7 @@ contract MetableVesting is Ownable {
 
         bytes32 key = _getKey(addressTokenSale, timeStart);
         SSale storage info = MapSale[key];
+        require(info.Expires>0, "Error timeStart");
 
         require(block.timestamp < info.Expires, "Error time Sale Expires");
         require(info.Price > 0, "Sale Price is zero");

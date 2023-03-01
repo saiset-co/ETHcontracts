@@ -2,9 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./SmartOnly.sol";
 
+
 contract GameToken is ERC20, SmartOnly {
+    using SafeERC20 for ERC20;
 
     ///@dev Total volume of tokens for sale
     uint256 public SaleAmount;
@@ -140,7 +143,7 @@ contract GameToken is ERC20, SmartOnly {
 
         //transfer from client
         uint256 TokenAmount = Price*amount/1e18;
-        require(smartToken.transferFrom(msg.sender, address(this), TokenAmount),"Error transfer clients coins");
+        smartToken.safeTransferFrom(msg.sender, address(this), TokenAmount);
 
         //transfer to client
         SaleAmount -= amount;

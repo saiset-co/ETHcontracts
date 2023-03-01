@@ -56,13 +56,13 @@ async function deploySmartVesting() {
   var Price=FromSum18(2);
 
   
-  var SaleStart=(await time.latest())>>>0;
+  var SaleStart=1 + (await time.latest())>>>0;
   var timeCliff = SaleStart + 2000;
   console.log("SaleStart:",SaleStart);
   await Contract.setSale(TokenSale.address, FromSum18(5000), Price, SaleStart,SaleStart+1000,timeCliff,7,100,10000);
   console.log("Sale info:",ToString(await Contract.getSale(TokenSale.address,SaleStart)));
   
-  
+  await time.increaseTo(SaleStart+2);
 
   console.log("----------buy----------------");
   console.log("1 USD: ",ToFloat(await TokenUSD.balanceOf(owner.address)));
