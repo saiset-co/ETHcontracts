@@ -106,59 +106,64 @@ contract SaiOracle is Ownable {
         uint256 _Degree
     ) internal view returns (bool, uint256) {
         uint256 bits = mapIndex[keyIndex];
+        
         //console.log("findMin _Degree=%s",_Degree);
         //console.logBytes32(bytes32(key));
         //console.logBytes32(bytes32(keyIndex));
         //console.logBytes32(bytes32(bits));
 
-        uint256 Degree2 = _Degree -= 8;
-        uint256 nStart = (key >> Degree2) & 0xFF;
-        uint256 nShift = 0xFF - nStart;
-        bits = (bits << nShift) >> nShift;
-        if (bits == 0) return (false, 0);
+        unchecked
+        {
 
-        //console.logBytes32(bytes32(bits));
-        uint256 nKey = LeftBitToKey(bits);
-        //console.logBytes32(bytes32(nKey));
+            uint256 Degree2 = _Degree -= 8;
+            uint256 nStart = (key >> Degree2) & 0xFF;
+            uint256 nShift = 0xFF - nStart;
+            bits = (bits << nShift) >> nShift;
+            if (bits == 0) return (false, 0);
 
-        uint256 keyIndex2 = (keyIndex << 8) | nKey;
+            //console.logBytes32(bytes32(bits));
+            uint256 nKey = LeftBitToKey(bits);
+            //console.logBytes32(bytes32(nKey));
 
-        if (Degree2 > 0) {
-            if (nKey < nStart) key = MAX_KEY;
+            uint256 keyIndex2 = (keyIndex << 8) | nKey;
 
-            (bool bFind, uint256 nKey2) = findKeyMinIter(
-                key,
-                keyIndex2,
-                Degree2
-            );
-            if (!bFind) {
-                //consolelog("not find nKey=%s nStart=%s _Degree=%s",nKey,nStart,_Degree);
-                if (nKey == nStart) {
-                    //try restart search
+            if (Degree2 > 0) {
+                if (nKey < nStart) key = MAX_KEY;
 
-                    //console.logBytes32(bytes32(bits));
-                    nShift++;
-                    bits = (bits << nShift) >> nShift;
-                    //consolelogBytes32(bytes32(bits));
-                    if (bits == 0) return (false, 0);
-                    nKey = LeftBitToKey(bits);
-                    keyIndex2 = (keyIndex << 8) | nKey;
-                    (bFind, nKey2) = findKeyMinIter(
-                        MAX_KEY,
-                        keyIndex2,
-                        Degree2
-                    );
+                (bool bFind, uint256 nKey2) = findKeyMinIter(
+                    key,
+                    keyIndex2,
+                    Degree2
+                );
+                if (!bFind) {
+                    //consolelog("not find nKey=%s nStart=%s _Degree=%s",nKey,nStart,_Degree);
+                    if (nKey == nStart) {
+                        //try restart search
 
-                    if (!bFind) return (false, 0);
-                } else {
-                    return (false, 0);
+                        //console.logBytes32(bytes32(bits));
+                        nShift++;
+                        bits = (bits << nShift) >> nShift;
+                        //consolelogBytes32(bytes32(bits));
+                        if (bits == 0) return (false, 0);
+                        nKey = LeftBitToKey(bits);
+                        keyIndex2 = (keyIndex << 8) | nKey;
+                        (bFind, nKey2) = findKeyMinIter(
+                            MAX_KEY,
+                            keyIndex2,
+                            Degree2
+                        );
+
+                        if (!bFind) return (false, 0);
+                    } else {
+                        return (false, 0);
+                    }
                 }
-            }
 
-            keyIndex2 <<= Degree2;
-            keyIndex2 |= nKey2;
+                keyIndex2 <<= Degree2;
+                keyIndex2 |= nKey2;
+            }
+            return (true, keyIndex2);
         }
-        return (true, keyIndex2);
     }
 
     function findKeyMaxIter(
@@ -172,68 +177,75 @@ contract SaiOracle is Ownable {
         //console.logBytes32(bytes32(keyIndex));
         //console.logBytes32(bytes32(bits));
 
-        uint256 Degree2 = _Degree -= 8;
-        uint256 nStart = (key >> Degree2) & 0xFF;
-        bits = (bits >> nStart) << nStart;
-        if (bits == 0) return (false, 0);
+        unchecked
+        {
+            uint256 Degree2 = _Degree -= 8;
+            uint256 nStart = (key >> Degree2) & 0xFF;
+            bits = (bits >> nStart) << nStart;
+            if (bits == 0) return (false, 0);
 
-        //console.logBytes32(bytes32(bits));
-        uint256 nKey = RightBitToKey(bits);
-        //console.logBytes32(bytes32(nKey));
+            //console.logBytes32(bytes32(bits));
+            uint256 nKey = RightBitToKey(bits);
+            //console.logBytes32(bytes32(nKey));
 
-        uint256 keyIndex2 = (keyIndex << 8) | nKey;
+            uint256 keyIndex2 = (keyIndex << 8) | nKey;
 
-        if (Degree2 > 0) {
-            if (nKey > nStart) key = 0;
+            if (Degree2 > 0) {
+                if (nKey > nStart) key = 0;
 
-            (bool bFind, uint256 nKey2) = findKeyMaxIter(
-                key,
-                keyIndex2,
-                Degree2
-            );
-            if (!bFind) {
-                //return (false, 0);
-                //consolelog("not find nKey=%s nStart=%s _Degree=%s",nKey,nStart,_Degree);
-                if (nKey == nStart) {
-                    //try restart search
+                (bool bFind, uint256 nKey2) = findKeyMaxIter(
+                    key,
+                    keyIndex2,
+                    Degree2
+                );
+                if (!bFind) {
+                    //return (false, 0);
+                    //consolelog("not find nKey=%s nStart=%s _Degree=%s",nKey,nStart,_Degree);
+                    if (nKey == nStart) {
+                        //try restart search
 
-                    //console.logBytes32(bytes32(bits));
-                    nStart++;
-                    bits = (bits >> nStart) << nStart;
-                    //consolelogBytes32(bytes32(bits));
-                    if (bits == 0) return (false, 0);
-                    nKey = RightBitToKey(bits);
-                    keyIndex2 = (keyIndex << 8) | nKey;
-                    (bFind, nKey2) = findKeyMaxIter(
-                        0,
-                        keyIndex2,
-                        Degree2
-                    );
+                        //console.logBytes32(bytes32(bits));
+                        nStart++;
+                        bits = (bits >> nStart) << nStart;
+                        //consolelogBytes32(bytes32(bits));
+                        if (bits == 0) return (false, 0);
+                        nKey = RightBitToKey(bits);
+                        keyIndex2 = (keyIndex << 8) | nKey;
+                        (bFind, nKey2) = findKeyMaxIter(
+                            0,
+                            keyIndex2,
+                            Degree2
+                        );
 
-                    if (!bFind) return (false, 0);
-                } else {
-                    return (false, 0);
+                        if (!bFind) return (false, 0);
+                    } else {
+                        return (false, 0);
+                    }
                 }
-            }
 
-            keyIndex2 <<= Degree2;
-            keyIndex2 |= nKey2;
+                keyIndex2 <<= Degree2;
+                keyIndex2 |= nKey2;
+            }
+            return (true, keyIndex2);
         }
-        return (true, keyIndex2);
     }
 
-    function LeftBitToKey(uint256 bits) internal pure returns (uint256) {
+    function LeftBitToKey(uint256 bits) internal pure returns (uint256) 
+    {
         uint256 nKey = 0;
         uint256 BitDelimiter = 128;
 
-        while (BitDelimiter > 0) {
-            uint256 bits2 = bits >> BitDelimiter;
-            if (bits2 != 0) {
-                bits = bits2;
-                nKey += BitDelimiter;
-            }
+        unchecked 
+        {
+            while (BitDelimiter > 0) {
+                uint256 bits2 = bits >> BitDelimiter;
+                if (bits2 != 0) {
+                    bits = bits2;
+                    nKey += BitDelimiter;
+                }
 
-            BitDelimiter >>= 1;
+                BitDelimiter >>= 1;
+            }
         }
         return nKey;
     }
@@ -245,14 +257,17 @@ contract SaiOracle is Ownable {
         uint256 BitDelimiter = 128;
         uint256 BitMaska = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-        while (BitDelimiter > 0) {
-            if (bits & BitMaska == 0) {
-                bits >>= BitDelimiter;
-                nKey += BitDelimiter;
-            }
+        unchecked 
+        {
+            while (BitDelimiter > 0) {
+                if (bits & BitMaska == 0) {
+                    bits >>= BitDelimiter;
+                    nKey += BitDelimiter;
+                }
 
-            BitDelimiter >>= 1;
-            BitMaska >>= BitDelimiter;
+                BitDelimiter >>= 1;
+                BitMaska >>= BitDelimiter;
+            }
         }
         return nKey;
     }
