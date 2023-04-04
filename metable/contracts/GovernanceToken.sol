@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "./SmartOnly.sol";
 
-contract GovernanceToken is ERC20, SmartOnly {
+
+contract GovernanceToken is ERC20Capped, SmartOnly {
  
-    constructor() ERC20("Governance token", "GVR") {}
+    constructor(uint256 cap) 
+    ERC20Capped(cap)
+    ERC20("Governance token", "GVR")
+    {
+    }
 
  
+
      /**
      * @dev Token transfer, called from other smart contracts
      * 

@@ -1,5 +1,5 @@
-//const {deploySmarts}=require("./common.js");
-const {deploySmarts}=require("./vesting.js");
+const {deploySmarts}=require("./common.js");
+//const {deploySmarts}=require("./vesting.js");
 
 async function main() {
   return deploySmarts();

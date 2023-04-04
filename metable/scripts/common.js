@@ -37,7 +37,7 @@ async function deploySmarts() {
 
   const Certificate = await StartDeploy("Certificate");
 
-  const Governance = await StartDeploy("GovernanceToken");
+  const Governance = await StartDeploy("GovernanceToken",FromSum(1e6));
   const Staking = await StartDeploy("Staking", Governance.address);
   const Token = await StartDeploy("GameToken");
 
@@ -248,16 +248,21 @@ async function deploySmartsTest() {
 
   await Certificate.Mint(owner.address, 1);
   var id = (1n << 48n) + 1n;
-  console.log("ownerOf:", id, (await Certificate.ownerOf(id)));
+  console.log("owner Certificate:", id, (await Certificate.ownerOf(id)));
+  //await Certificate.Burn(id);
+  //await Certificate.transferFrom(owner.address,otherAccount.address,id);
 
+  console.log("Governance CAP:", ToFloat(await Governance.cap()));
 
   var PriceToken = 1 * 1e9;
   await Token.Mint("1000000000000000000000");
   console.log("totalSupply:", ToFloat(await Token.totalSupply()));
   //await Token.MintTo(owner.address,20);
   await Token.setSale("500000000000000000000", PriceToken);
-  await Token.buyToken({ value: 200 * PriceToken });
+  await Token.buyToken({ value: 210 * PriceToken });
   console.log("Tokens 1:", ToFloat(await Token.balanceOf(owner.address)));
+  await Token.burn(FromSum(10));
+  console.log("Tokens after burn:", ToFloat(await Token.balanceOf(owner.address)));
 
   console.log("=============Mints=============");
 
